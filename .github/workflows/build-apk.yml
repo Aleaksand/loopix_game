@@ -31,32 +31,42 @@ jobs:
     
     - name: Build and Sign APK
       run: |
-        echo '{"android": {"release": {"packageType": "apk"}}}' > ${{ github.workspace }}/build.json
+        # Создаём build.json для типа пакета APK
+        echo '{"android": {"release": {"packageType": "apk"}}}' > build.json
         
+        # Создаём cordova проект
         cordova create build-temp com.yourname.circuitblast CircuitBlast
         cp -r www build-temp/
         cp config.xml build-temp/
         
+        # Переходим в директорию проекта
         cd build-temp
-        cordova platform add android
-        cordova build android --release --buildConfig=${{ github.workspace }}/build.json
         
-        # Используем абсолютный путь, который мы видели в ваших логах
-        APK_PATH="${{ github.workspace }}/build-temp/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+        # Добавляем платформу и собираем
+        cordova platform add android
+        cordova build android --release --buildConfig=../build.json
+        
+        # Проверяем путь к APK (относительно build-temp)
+        APK_PATH="platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
         
         if [ ! -f "$APK_PATH" ]; then
-          echo "❌ Файл не найден по пути: $APK_PATH"
+          echo "❌ Файл не найден по пути: $(pwd)/$APK_PATH"
+          # Попробуем найти APK рекурсивно
+          find . -name "*.apk" -type f
           exit 1
         fi
         
-        echo "✅ APK подтвержден: $APK_PATH"
+        echo "✅ APK найден: $(pwd)/$APK_PATH"
         APK_DIR=$(dirname "$APK_PATH")
         
+        # Генерируем keystore
         keytool -genkey -v -keystore "$APK_DIR/my.keystore" -keyalg RSA -keysize 2048 -validity 10000 -alias app -storepass password -keypass password -dname "CN=Android,O=Android,C=US"
         
+        # Подписываем APK
         APK_SIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
         $APK_SIGNER sign --ks "$APK_DIR/my.keystore" --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out "CircuitBlast.apk" "$APK_PATH"
         
+        # Сохраняем путь к финальному APK
         echo "FINAL_APK_PATH=$(pwd)/CircuitBlast.apk" >> $GITHUB_ENV
     
     - name: Upload APK
