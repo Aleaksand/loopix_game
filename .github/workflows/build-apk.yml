@@ -31,27 +31,30 @@ jobs:
     
     - name: Build and Sign APK
       run: |
-        # Создаём build.json для типа пакета APK
-        echo '{"android": {"release": {"packageType": "apk"}}}' > build.json
-        
-        # Создаём cordova проект
+        # Создаём cordova проект СРАЗУ с нужным build.json внутри
         cordova create build-temp com.yourname.circuitblast CircuitBlast
+        
+        # Копируем файлы проекта
         cp -r www build-temp/
         cp config.xml build-temp/
+        
+        # Создаём build.json внутри проекта (важно!)
+        echo '{"android": {"release": {"packageType": "apk"}}}' > build-temp/build.json
         
         # Переходим в директорию проекта
         cd build-temp
         
-        # Добавляем платформу и собираем
+        # Добавляем платформу
         cordova platform add android
-        cordova build android --release --buildConfig=../build.json
         
-        # Проверяем путь к APK (относительно build-temp)
+        # Собираем с build.json (теперь он в корне проекта)
+        cordova build android --release --buildConfig=build.json
+        
+        # Проверяем путь к APK
         APK_PATH="platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
         
         if [ ! -f "$APK_PATH" ]; then
           echo "❌ Файл не найден по пути: $(pwd)/$APK_PATH"
-          # Попробуем найти APK рекурсивно
           find . -name "*.apk" -type f
           exit 1
         fi
