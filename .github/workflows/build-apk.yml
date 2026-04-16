@@ -60,7 +60,7 @@ jobs:
         for path in "${APK_PATHS[@]}"; do
           if [ -f "$path" ]; then
             APK_PATH="$path"
-            echo "✅ APK найден: $APK_PATH"
+            echo "✅ APK найде: $APK_PATH"
             break
           fi
         done
