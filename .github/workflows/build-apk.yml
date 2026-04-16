@@ -13,18 +13,18 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4 # Обновлено до v4
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
     
     - name: Setup Java
-      uses: actions/setup-java@v4 # Обновлено до v4
+      uses: actions/setup-java@v4
       with:
-        java-version: '17' # Изменено с 11 на 17 для работы sdkmanager
+        java-version: '17'
         distribution: 'temurin'
     
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3 # Обновлено до v3
+      uses: android-actions/setup-android@v3
     
     - name: Install Cordova
       run: npm install -g cordova
@@ -43,17 +43,17 @@ jobs:
     
     - name: Sign APK
       run: |
-        cd build-temp/platforms/android/app/build/outputs/apk/release
-        # Генерация ключа (лучше использовать секреты GitHub в будущем)
+        APK_PATH=$(find build-temp/platforms/android -name "*-release-unsigned.apk" | head -n 1)
+        APK_DIR=$(dirname "$APK_PATH")
+        APK_NAME=$(basename "$APK_PATH")
+        cd "$APK_DIR"
         keytool -genkey -v -keystore my.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias app -storepass password -keypass password -dname "CN=Android,O=Android,C=US"
-        
-        # Подпись через apksigner (более современный метод, чем jarsigner)
-        # Он находится в build-tools. Находим его путь автоматически:
         APK_SIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
-        $APK_SIGNER sign --ks my.keystore --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out CircuitBlast.apk app-release-unsigned.apk
+        $APK_SIGNER sign --ks my.keystore --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out CircuitBlast.apk "$APK_NAME"
+        echo "FINAL_APK_PATH=$(pwd)/CircuitBlast.apk" >> $GITHUB_ENV
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: CircuitBlast-APK
-        path: build-temp/platforms/android/app/build/outputs/apk/release/CircuitBlast.apk
+        path: ${{ env.FINAL_APK_PATH }}
