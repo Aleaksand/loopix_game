@@ -43,27 +43,46 @@ jobs:
       working-directory: build-temp
       run: cordova build android --release -- --packageType=apk
     
-    - name: Sign APK
-      working-directory: build-temp
+    - name: Find and Sign APK
       run: |
-        APK_PATH="platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+        # Ищем APK по всему workspace
+        echo "🔍 Ищем APK..."
+        find ${{ github.workspace }} -name "*.apk" -type f 2>/dev/null
         
-        if [ ! -f "$APK_PATH" ]; then
-          echo "❌ Файл не найден: $(pwd)/$APK_PATH"
-          find . -name "*.apk" -type f
+        # Пробуем разные возможные пути
+        APK_PATHS=(
+          "${{ github.workspace }}/build-temp/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          "${{ github.workspace }}/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          "${{ github.workspace }}/build-temp/platforms/android/app/build/outputs/apk/release/app-release.apk"
+        )
+        
+        APK_PATH=""
+        for path in "${APK_PATHS[@]}"; do
+          if [ -f "$path" ]; then
+            APK_PATH="$path"
+            echo "✅ APK найден: $APK_PATH"
+            break
+          fi
+        done
+        
+        if [ -z "$APK_PATH" ]; then
+          echo "❌ APK не найден ни по одному из путей"
           exit 1
         fi
         
-        echo "✅ APK найден: $(pwd)/$APK_PATH"
         APK_DIR=$(dirname "$APK_PATH")
         
+        # Генерируем keystore
         keytool -genkey -v -keystore "$APK_DIR/my.keystore" -keyalg RSA -keysize 2048 -validity 10000 -alias app -storepass password -keypass password -dname "CN=Android,O=Android,C=US"
         
+        # Подписываем APK
         APK_SIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
-        $APK_SIGNER sign --ks "$APK_DIR/my.keystore" --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out "CircuitBlast.apk" "$APK_PATH"
+        $APK_SIGNER sign --ks "$APK_DIR/my.keystore" --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out "${{ github.workspace }}/CircuitBlast.apk" "$APK_PATH"
+        
+        echo "FINAL_APK_PATH=${{ github.workspace }}/CircuitBlast.apk" >> $GITHUB_ENV
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: CircuitBlast-APK
-        path: build-temp/CircuitBlast.apk
+        path: ${{ env.FINAL_APK_PATH }}
