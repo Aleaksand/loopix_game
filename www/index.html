@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circuit Blast</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow: hidden;
+            transition: background 0.5s;
+        }
+        
+        body.theme-neon {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        
+        body.theme-matrix {
+            background: linear-gradient(135deg, #0d0208 0%, #003b00 50%, #008f11 100%);
+        }
+        
+        body.theme-cyberpunk {
+            background: linear-gradient(135deg, #2d1b4e 0%, #0a0a0a 50%, #ff006e 100%);
+        }
+        
+        h1 {
+            margin: 15px 0;
+            font-size: 2em;
+            letter-spacing: 3px;
+            transition: all 0.5s;
+        }
+        
+        body.theme-neon h1 {
+            text-shadow: 0 0 20px #e94560, 0 0 40px #e94560;
+            color: white;
+        }
+        
+        body.theme-matrix h1 {
+            text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body.theme-cyberpunk h1 {
+            text-shadow: 0 0 20px #ff006e, 0 0 40px #00f0ff;
+            color: #ff006e;
+            font-family: 'Impact', sans-serif;
+        }
+        
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+        
+        #scoreBoard {
+            display: flex;
+            gap: 30px;
+            font-size: 1.2em;
+            background: rgba(255,255,255,0.1);
+            padding: 12px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.5s;
+        }
+        
+        body.theme-matrix #scoreBoard {
+            background: rgba(0,255,65,0.1);
+            border: 1px solid #00ff41;
+        }
+        
+        body.theme-cyberpunk #scoreBoard {
+            background: rgba(255,0,110,0.1);
+            border: 1px solid #ff006e;
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+        
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .score-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        
+        .score-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            transition: color 0.5s;
+        }
+        
+        body.theme-neon .score-value { color: #e94560; }
+        body.theme-matrix .score-value { color: #00ff41; }
+        body.theme-cyberpunk .score-value { color: #ff006e; }
+        
+        #mainCanvas {
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            cursor: crosshair;
+            transition: all 0.5s;
+        }
+        
+        body.theme-neon #mainCanvas { border: 3px solid #e94560; }
+        body.theme-matrix #mainCanvas { border: 3px solid #00ff41; }
+        body.theme-cyberpunk #mainCanvas { border: 3px solid #ff006e; }
+        
+        #previewPanel {
+            display: flex;
+            gap: 15px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.5s;
+        }
+        
+        body.theme-matrix #previewPanel {
+            background: rgba(0,255,65,0.05);
+            border: 1px solid #00ff41;
+        }
+        
+        body.theme-cyberpunk #previewPanel {
+            background: rgba(0,240,255,0.05);
+            border: 1px solid #00f0ff;
+            clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+        }
+        
+        .preview-slot {
+            width: 70px;
+            height: 70px;
+            border: 3px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        .preview-slot.has-block:hover {
+            transform: scale(1.05);
+        }
+        
+        .preview-slot.selected {
+            background: rgba(255,255,255,0.3);
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            transform: scale(1.1);
+        }
+        
+        body.theme-neon .preview-slot.selected {
+            background: rgba(233, 69, 96, 0.3);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            border-color: #e94560;
+        }
+        
+        body.theme-matrix .preview-slot.selected {
+            background: rgba(0,255,65,0.3);
+            box-shadow: 0 0 20px rgba(0,255,65,0.5);
+            border-color: #00ff41;
+        }
+        
+        body.theme-cyberpunk .preview-slot.selected {
+            background: rgba(255,0,110,0.3);
+            box-shadow: 0 0 20px rgba(255,0,110,0.5);
+            border-color: #ff006e;
+        }
+        
+        .preview-slot.empty {
+            opacity: 0.2;
+            border-style: dotted;
+            cursor: default;
+        }
+        
+        .preview-slot canvas {
+            border-radius: 5px;
+            pointer-events: none;
+        }
+        
+        .slot-number {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            transition: all 0.5s;
+        }
+        
+        body.theme-neon .slot-number { background: #e94560; }
+        body.theme-matrix .slot-number { background: #00ff41; color: #000; }
+        body.theme-cyberpunk .slot-number { background: #ff006e; }
+        
+        .rotate-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        body.theme-neon .rotate-indicator { background: #f39c12; }
+        body.theme-matrix .rotate-indicator { background: #008f11; color: #00ff41; }
+        body.theme-cyberpunk .rotate-indicator { background: #00f0ff; color: #000; }
+        
+        .preview-slot.selected .rotate-indicator {
+            opacity: 1;
+        }
+        
+        #settingsBtn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        #settingsBtn:hover {
+            transform: rotate(30deg);
+        }
+        
+        body.theme-neon #settingsBtn:hover { border-color: #e94560; background: rgba(233, 69, 96, 0.3); }
+        body.theme-matrix #settingsBtn:hover { border-color: #00ff41; background: rgba(0,255,65,0.3); }
+        body.theme-cyberpunk #settingsBtn:hover { border-color: #ff006e; background: rgba(255,0,110,0.3); }
+        
+        #settingsModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        #settingsModal.show {
+            display: flex;
+        }
+        
+        .settings-content {
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            min-width: 300px;
+            transition: all 0.5s;
+        }
+        
+        body.theme-neon .settings-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #e94560;
+        }
+        
+        body.theme-matrix .settings-content {
+            background: linear-gradient(135deg, #0d0208, #003b00);
+            border: 2px solid #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body.theme-cyberpunk .settings-content {
+            background: linear-gradient(135deg, #2d1b4e, #0a0a0a);
+            border: 2px solid #ff006e;
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+        
+        .settings-content h2 {
+            margin-bottom: 20px;
+            transition: color 0.5s;
+        }
+        
+        body.theme-neon .settings-content h2 { color: #e94560; }
+        body.theme-matrix .settings-content h2 { color: #00ff41; }
+        body.theme-cyberpunk .settings-content h2 { color: #ff006e; }
+        
+        .theme-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .theme-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .theme-btn.active {
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+        
+        .theme-btn.neon {
+            background: linear-gradient(135deg, #e94560, #0f3460);
+        }
+        
+        .theme-btn.matrix {
+            background: linear-gradient(135deg, #00ff41, #003b00);
+        }
+        
+        .theme-btn.cyberpunk {
+            background: linear-gradient(135deg, #ff006e, #00f0ff);
+        }
+        
+        .settings-btn {
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        body.theme-neon .settings-btn {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+        }
+        
+        body.theme-matrix .settings-btn {
+            background: #00ff41;
+            color: #000;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            border-radius: 0;
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+        
+        body.theme-cyberpunk .settings-btn {
+            background: linear-gradient(135deg, #ff006e, #00f0ff);
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+        
+        .settings-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .settings-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        #gameOverScreen h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px;
+            transition: all 0.5s;
+        }
+        
+        body.theme-neon #gameOverScreen h2 { color: #e94560; text-shadow: 0 0 30px #e94560; }
+        body.theme-matrix #gameOverScreen h2 { color: #00ff41; text-shadow: 0 0 30px #00ff41; font-family: 'Courier New', monospace; }
+        body.theme-cyberpunk #gameOverScreen h2 { color: #ff006e; text-shadow: 0 0 30px #ff006e; }
+        
+        #finalScore {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        #finalLoops {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="theme-neon">
+    <h1>⚡ CIRCUIT BLAST ⚡</h1>
+    
+    <div id="settingsBtn" onclick="game.openSettings()">⚙️</div>
+    
+    <div id="gameContainer">
+        <div id="scoreBoard">
+            <div class="score-item">
+                <span class="score-label">ОЧКИ</span>
+                <span class="score-value" id="score">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">РЕКОРД</span>
+                <span class="score-value" id="highScore">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">ПЕТЛИ</span>
+                <span class="score-value" id="loops">0</span>
+            </div>
+        </div>
+        
+        <canvas id="mainCanvas" width="300" height="300"></canvas>
+        
+        <div id="previewPanel">
+            <div class="preview-slot has-block" id="slot0" data-index="0">
+                <span class="slot-number">1</span>
+                <canvas id="preview0" width="50" height="50"></canvas>
+                <span class="rotate-indicator">↻</span>
+            </div>
+            <div class="preview-slot has-block" id="slot1" data-index="1">
+                <span class="slot-number">2</span>
+                <canvas id="preview1" width="50" height="50"></canvas>
+                <span class="rotate-indicator">↻</span>
+            </div>
+            <div class="preview-slot has-block" id="slot2" data-index="2">
+                <span class="slot-number">3</span>
+                <canvas id="preview2" width="50" height="50"></canvas>
+                <span class="rotate-indicator">↻</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="settingsModal">
+        <div class="settings-content">
+            <h2>⚙️ НАСТРОЙКИ</h2>
+            
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 10px;">Тема оформления:</div>
+                <div class="theme-selector">
+                    <div class="theme-btn neon active" onclick="game.setTheme('neon')" title="Неон"></div>
+                    <div class="theme-btn matrix" onclick="game.setTheme('matrix')" title="Матрица"></div>
+                    <div class="theme-btn cyberpunk" onclick="game.setTheme('cyberpunk')" title="Киберпанк"></div>
+                </div>
+            </div>
+            
+            <button class="settings-btn" onclick="game.newGame(); game.closeSettings()">🔄 Начать заново</button>
+            <button class="settings-btn secondary" onclick="game.closeSettings()">✕ Закрыть</button>
+        </div>
+    </div>
+    
+    <div id="gameOverScreen">
+        <h2>GAME OVER</h2>
+        <div id="finalScore">Очки: 0</div>
+        <div id="finalLoops">Петель: 0</div>
+        <button class="settings-btn" onclick="game.newGame()">🔄 Начать заново</button>
+    </div>
+
+    <script>
+        const THEMES = {
+            neon: {
+                blocks: {
+                    DEAD_END: '#3498db',
+                    STRAIGHT: '#2ecc71',
+                    CORNER: '#f39c12',
+                    T_SHAPE: '#9b59b6',
+                    CROSS: '#e74c3c'
+                },
+                chainColors: {
+                    small: ['#3498db', '#2ecc71', '#f39c12'],
+                    medium: ['#9b59b6', '#e74c3c', '#1abc9c'],
+                    large: ['#f1c40f', '#e67e22', '#e94560'],
+                    epic: ['#9b59b6', '#3498db', '#2ecc71'],
+                    legendary: ['#ffd700', '#ff6b6b', '#c44569']
+                }
+            },
+            matrix: {
+                blocks: {
+                    DEAD_END: '#008f11',
+                    STRAIGHT: '#00ff41',
+                    CORNER: '#003b00',
+                    T_SHAPE: '#0d0208',
+                    CROSS: '#00ff41'
+                },
+                chainColors: {
+                    small: ['#008f11', '#00ff41', '#003b00'],
+                    medium: ['#00ff41', '#008f11', '#003b00'],
+                    large: ['#00ff41', '#00cc33', '#009926'],
+                    epic: ['#00ff41', '#66ff99', '#ccffcc'],
+                    legendary: ['#ffffff', '#00ff41', '#008f11']
+                }
+            },
+            cyberpunk: {
+                blocks: {
+                    DEAD_END: '#00f0ff',
+                    STRAIGHT: '#ff006e',
+                    CORNER: '#ffbe0b',
+                    T_SHAPE: '#8338ec',
+                    CROSS: '#fb5607'
+                },
+                chainColors: {
+                    small: ['#00f0ff', '#ff006e', '#ffbe0b'],
+                    medium: ['#8338ec', '#fb5607', '#3a86ff'],
+                    large: ['#ff006e', '#00f0ff', '#ffbe0b'],
+                    epic: ['#fb5607', '#8338ec', '#3a86ff'],
+                    legendary: ['#ffffff', '#ff006e', '#00f0ff']
+                }
+            }
+        };
+
+        const BLOCK_TYPES = {
+            EMPTY: { connectors: [0,0,0,0], color: '#2c3e50' },
+            DEAD_END: { 
+                variants: [
+                    { connectors: [1,0,0,0] },
+                    { connectors: [0,1,0,0] },
+                    { connectors: [0,0,1,0] },
+                    { connectors: [0,0,0,1] }
+                ]
+            },
+            STRAIGHT: { 
+                variants: [
+                    { connectors: [1,0,1,0] },
+                    { connectors: [0,1,0,1] }
+                ]
+            },
+            CORNER: { 
+                variants: [
+                    { connectors: [1,1,0,0] },
+                    { connectors: [0,1,1,0] },
+                    { connectors: [0,0,1,1] },
+                    { connectors: [1,0,0,1] }
+                ]
+            },
+            T_SHAPE: { 
+                variants: [
+                    { connectors: [1,1,1,0] },
+                    { connectors: [0,1,1,1] },
+                    { connectors: [1,0,1,1] },
+                    { connectors: [1,1,0,1] }
+                ]
+            },
+            CROSS: { connectors: [1,1,1,1] }
+        };
+
+        class Block {
+            constructor(type, variant = 0, theme = 'neon') {
+                this.type = type;
+                this.variant = variant;
+                this.rotation = 0;
+                this.theme = theme;
+                
+                if (type === 'CROSS') {
+                    this.connectors = [...BLOCK_TYPES.CROSS.connectors];
+                } else if (type === 'EMPTY') {
+                    this.connectors = [...BLOCK_TYPES.EMPTY.connectors];
+                } else {
+                    const variants = BLOCK_TYPES[type].variants;
+                    this.connectors = [...variants[variant].connectors];
+                }
+                
+                this.updateColor(theme);
+            }
+            
+            updateColor(theme) {
+                const colors = THEMES[theme].blocks;
+                if (this.type === 'CROSS') this.color = colors.CROSS;
+                else if (this.type === 'EMPTY') this.color = '#2c3e50';
+                else this.color = colors[this.type];
+            }
+            
+            rotate() {
+                const [top, right, bottom, left] = this.connectors;
+                this.connectors = [left, top, right, bottom];
+                this.rotation = (this.rotation + 90) % 360;
+            }
+            
+            getConnector(direction) {
+                return this.connectors[direction];
+            }
+            
+            // Количество соединителей у блока
+            getConnectorCount() {
+                return this.connectors.filter(c => c).length;
+            }
+        }
+
+        class CircuitBlast {
+            constructor() {
+                this.canvas = document.getElementById('mainCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gridSize = 6;
+                this.cellSize = 50;
+                this.grid = [];
+                this.score = 0;
+                this.highScore = localStorage.getItem('circuitBlastHigh') || 0;
+                this.loops = 0;
+                this.previewBlocks = [null, null, null];
+                this.selectedSlot = null;
+                this.hoverCell = { x: -1, y: -1 };
+                this.isGameOver = false;
+                this.particles = [];
+                this.lastLoopCells = new Set();
+                this.chainGlowColors = new Map();
+                this.currentTheme = localStorage.getItem('circuitBlastTheme') || 'neon';
+                
+                this.init();
+            }
+            
+            init() {
+                document.body.className = `theme-${this.currentTheme}`;
+                this.updateScore();
+                this.setupGrid();
+                this.generateNewSet();
+                this.setupEvents();
+                this.animate();
+            }
+            
+            setTheme(theme) {
+                this.currentTheme = theme;
+                localStorage.setItem('circuitBlastTheme', theme);
+                document.body.className = `theme-${theme}`;
+                
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        if (this.grid[y][x]) {
+                            this.grid[y][x].updateColor(theme);
+                        }
+                    }
+                }
+                
+                for (let i = 0; i < 3; i++) {
+                    if (this.previewBlocks[i]) {
+                        this.previewBlocks[i].updateColor(theme);
+                    }
+                }
+                
+                this.renderPreviews();
+                this.updateThemeButtons();
+            }
+            
+            updateThemeButtons() {
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.theme-btn.${this.currentTheme}`).classList.add('active');
+            }
+            
+            openSettings() {
+                this.updateThemeButtons();
+                document.getElementById('settingsModal').classList.add('show');
+            }
+            
+            closeSettings() {
+                document.getElementById('settingsModal').classList.remove('show');
+            }
+            
+            setupGrid() {
+                this.grid = [];
+                for (let y = 0; y < this.gridSize; y++) {
+                    const row = [];
+                    for (let x = 0; x < this.gridSize; x++) {
+                        row.push(null);
+                    }
+                    this.grid.push(row);
+                }
+            }
+            
+            generateNewSet() {
+                for (let i = 0; i < 3; i++) {
+                    this.previewBlocks[i] = this.randomBlock();
+                }
+                this.selectedSlot = null;
+                this.updateSlotClasses();
+                this.renderPreviews();
+                
+                if (!this.canPlaceAny()) {
+                    this.gameOver();
+                }
+            }
+            
+            updateSlotClasses() {
+                for (let i = 0; i < 3; i++) {
+                    const slot = document.getElementById(`slot${i}`);
+                    slot.classList.remove('selected', 'has-block', 'empty');
+                    
+                    if (this.previewBlocks[i] === null) {
+                        slot.classList.add('empty');
+                    } else {
+                        slot.classList.add('has-block');
+                        if (this.selectedSlot === i) {
+                            slot.classList.add('selected');
+                        }
+                    }
+                }
+            }
+            
+            randomBlock() {
+                const types = ['DEAD_END', 'STRAIGHT', 'CORNER', 'T_SHAPE', 'CROSS'];
+                const weights = [1, 2, 3, 2, 1];
+                
+                const total = weights.reduce((a, b) => a + b, 0);
+                let random = Math.random() * total;
+                
+                for (let i = 0; i < types.length; i++) {
+                    random -= weights[i];
+                    if (random <= 0) {
+                        const type = types[i];
+                        let variant = 0;
+                        if (BLOCK_TYPES[type].variants) {
+                            variant = Math.floor(Math.random() * BLOCK_TYPES[type].variants.length);
+                        }
+                        return new Block(type, variant, this.currentTheme);
+                    }
+                }
+                return new Block('STRAIGHT', 0, this.currentTheme);
+            }
+            
+            setupEvents() {
+                for (let i = 0; i < 3; i++) {
+                    const slot = document.getElementById(`slot${i}`);
+                    slot.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.onSlotClick(i);
+                    });
+                }
+                
+                this.canvas.addEventListener('mousemove', (e) => this.onCanvasMove(e));
+                this.canvas.addEventListener('mouseleave', () => this.onCanvasLeave());
+                this.canvas.addEventListener('click', (e) => this.onCanvasClick(e));
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    this.onCanvasMove(e.touches[0]);
+                });
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.onCanvasClick(e.changedTouches[0]);
+                });
+            }
+            
+            onSlotClick(slotIndex) {
+                if (this.isGameOver) return;
+                if (this.previewBlocks[slotIndex] === null) return;
+                
+                if (this.selectedSlot === slotIndex) {
+                    this.previewBlocks[slotIndex].rotate();
+                } else {
+                    this.selectedSlot = slotIndex;
+                }
+                
+                this.updateSlotClasses();
+                this.renderPreviews();
+            }
+            
+            onCanvasMove(e) {
+                if (this.isGameOver) return;
+                if (this.selectedSlot === null) return;
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const gridX = Math.floor(x / this.cellSize);
+                const gridY = Math.floor(y / this.cellSize);
+                
+                if (gridX >= 0 && gridX < this.gridSize && 
+                    gridY >= 0 && gridY < this.gridSize) {
+                    this.hoverCell = { x: gridX, y: gridY };
+                } else {
+                    this.hoverCell = { x: -1, y: -1 };
+                }
+            }
+            
+            onCanvasLeave() {
+                this.hoverCell = { x: -1, y: -1 };
+            }
+            
+            onCanvasClick(e) {
+                if (this.isGameOver) return;
+                if (this.selectedSlot === null) return;
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const gridX = Math.floor(x / this.cellSize);
+                const gridY = Math.floor(y / this.cellSize);
+                
+                if (gridX >= 0 && gridX < this.gridSize && 
+                    gridY >= 0 && gridY < this.gridSize &&
+                    !this.grid[gridY][gridX]) {
+                    
+                    this.placeBlock(gridX, gridY, this.selectedSlot);
+                }
+            }
+            
+            placeBlock(x, y, slotIndex) {
+                const block = this.previewBlocks[slotIndex];
+                this.grid[y][x] = block;
+                
+                this.previewBlocks[slotIndex] = null;
+                this.selectedSlot = null;
+                
+                const loops = this.findLoops();
+                if (loops.length > 0) {
+                    this.assignGlowColors(loops);
+                    this.clearLoops(loops);
+                }
+                
+                const remaining = this.previewBlocks.filter(b => b !== null).length;
+                if (remaining === 0) {
+                    setTimeout(() => this.generateNewSet(), 400);
+                } else {
+                    if (!this.canPlaceRemaining()) {
+                        this.gameOver();
+                    }
+                }
+                
+                this.updateSlotClasses();
+                this.renderPreviews();
+            }
+            
+            canPlaceAny() {
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        if (!this.grid[y][x]) return true;
+                    }
+                }
+                return false;
+            }
+            
+            canPlaceRemaining() {
+                let freeCells = 0;
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        if (!this.grid[y][x]) freeCells++;
+                    }
+                }
+                
+                const remainingBlocks = this.previewBlocks.filter(b => b !== null).length;
+                return freeCells >= remainingBlocks;
+            }
+            
+            // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: проверяем, является ли компонента "замкнутой"
+            // Тупики (DEAD_END) не создают петли сами по себе, а только закрывают существующие
+            isClosedComponent(component) {
+                // Собираем информацию о компоненте
+                let hasNonDeadEnd = false;
+                let totalFreeEnds = 0;
+                let deadEndCount = 0;
+                
+                for (const cellKey of component) {
+                    const [cx, cy] = cellKey.split(',').map(Number);
+                    const block = this.grid[cy][cx];
+                    
+                    if (!block) continue;
+                    
+                    const isDeadEnd = block.type === 'DEAD_END';
+                    const connectorCount = block.getConnectorCount();
+                    
+                    if (isDeadEnd) {
+                        deadEndCount++;
+                    } else {
+                        hasNonDeadEnd = true;
+                    }
+                    
+                    // Считаем свободные концы
+                    if (this.hasFreeConnectors(cx, cy)) {
+                        totalFreeEnds++;
+                    }
+                }
+                
+                // Если в компоненте только тупики — это не петля!
+                if (!hasNonDeadEnd) {
+                    return false;
+                }
+                
+                // Если есть разветвления (Т-образные, кресты) — все концы должны быть закрыты
+                let hasBranches = false;
+                for (const cellKey of component) {
+                    const [cx, cy] = cellKey.split(',').map(Number);
+                    const block = this.grid[cy][cx];
+                    if (block && block.getConnectorCount() >= 3) {
+                        hasBranches = true;
+                        break;
+                    }
+                }
+                
+                if (hasBranches) {
+                    return totalFreeEnds === 0;
+                }
+                
+                // Простая линия без разветвлений — допускаем 2 свободных конца (начало и конец)
+                // Но если это кольцо (0 свободных) — тоже уничтожаем
+                return totalFreeEnds <= 2;
+            }
+            
+            hasFreeConnectors(x, y) {
+                const block = this.grid[y][x];
+                if (!block) return false;
+                
+                const directions = [
+                    {dx: 0, dy: -1, dir: 0, opposite: 2},
+                    {dx: 1, dy: 0, dir: 1, opposite: 3},
+                    {dx: 0, dy: 1, dir: 2, opposite: 0},
+                    {dx: -1, dy: 0, dir: 3, opposite: 1}
+                ];
+                
+                for (const {dx, dy, dir, opposite} of directions) {
+                    if (block.getConnector(dir)) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) {
+                            return true;
+                        }
+                        
+                        const neighbor = this.grid[ny][nx];
+                        if (!neighbor || !neighbor.getConnector(opposite)) {
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            findLoops() {
+                const loops = [];
+                const processed = new Set();
+                
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        const key = `${x},${y}`;
+                        if (!this.grid[y][x] || processed.has(key)) continue;
+                        
+                        const component = this.findConnectedComponent(x, y);
+                        
+                        // Проверяем, что компонента имеет соединения
+                        let hasConnection = false;
+                        for (const cellKey of component) {
+                            const [cx, cy] = cellKey.split(',').map(Number);
+                            processed.add(cellKey);
+                            
+                            const block = this.grid[cy][cx];
+                            if (block) {
+                                for (let d = 0; d < 4; d++) {
+                                    if (block.getConnector(d)) {
+                                        hasConnection = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Проверяем условие закрытости (с учётом тупиков)
+                        if (this.isClosedComponent(component) && component.size >= 2 && hasConnection) {
+                            loops.push(component);
+                        }
+                    }
+                }
+                
+                return loops;
+            }
+            
+            findConnectedComponent(startX, startY) {
+                const component = new Set();
+                const queue = [{x: startX, y: startY}];
+                const visited = new Set([`${startX},${startY}`]);
+                
+                while (queue.length > 0) {
+                    const {x, y} = queue.shift();
+                    const block = this.grid[y][x];
+                    if (!block) continue;
+                    
+                    component.add(`${x},${y}`);
+                    
+                    const directions = [
+                        {dx: 0, dy: -1, dir: 0, opposite: 2},
+                        {dx: 1, dy: 0, dir: 1, opposite: 3},
+                        {dx: 0, dy: 1, dir: 2, opposite: 0},
+                        {dx: -1, dy: 0, dir: 3, opposite: 1}
+                    ];
+                    
+                    for (const {dx, dy, dir, opposite} of directions) {
+                        if (!block.getConnector(dir)) continue;
+                        
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) continue;
+                        
+                        const neighbor = this.grid[ny][nx];
+                        if (!neighbor) continue;
+                        
+                        if (!neighbor.getConnector(opposite)) continue;
+                        
+                        const nextKey = `${nx},${ny}`;
+                        if (visited.has(nextKey)) continue;
+                        
+                        visited.add(nextKey);
+                        queue.push({x: nx, y: ny});
+                    }
+                }
+                
+                return component;
+            }
+            
+            assignGlowColors(loops) {
+                this.chainGlowColors.clear();
+                const colors = THEMES[this.currentTheme].chainColors;
+                
+                loops.forEach((loop, index) => {
+                    const size = loop.size;
+                    let palette;
+                    
+                    if (size <= 6) palette = colors.small;
+                    else if (size <= 10) palette = colors.medium;
+                    else if (size <= 15) palette = colors.large;
+                    else if (size <= 20) palette = colors.epic;
+                    else palette = colors.legendary;
+                    
+                    const colorIndex = index % palette.length;
+                    const glowColor = palette[colorIndex];
+                    
+                    loop.forEach(key => {
+                        this.chainGlowColors.set(key, glowColor);
+                    });
+                });
+            }
+            
+            clearLoops(loops) {
+                let totalCells = 0;
+                this.lastLoopCells.clear();
+                
+                loops.forEach(loop => {
+                    totalCells += loop.size;
+                    loop.forEach(key => this.lastLoopCells.add(key));
+                    
+                    loop.forEach(key => {
+                        const [x, y] = key.split(',').map(Number);
+                        const glowColor = this.chainGlowColors.get(key) || '#e94560';
+                        this.createExplosion(x, y, glowColor);
+                        this.grid[y][x] = null;
+                    });
+                });
+                
+                const sizeBonus = loops.reduce((sum, loop) => sum + loop.size, 0);
+                const points = sizeBonus * sizeBonus * 10;
+                this.score += points;
+                this.loops += loops.length;
+                
+                this.updateScore();
+                
+                setTimeout(() => {
+                    this.lastLoopCells.clear();
+                    this.chainGlowColors.clear();
+                }, 600);
+            }
+            
+            createExplosion(gridX, gridY, color) {
+                const x = gridX * this.cellSize + this.cellSize / 2;
+                const y = gridY * this.cellSize + this.cellSize / 2;
+                
+                const particleCount = 20;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const speed = 3 + Math.random() * 5;
+                    this.particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 1,
+                        color: color,
+                        size: 3 + Math.random() * 4,
+                        decay: 0.01 + Math.random() * 0.02
+                    });
+                }
+            }
+            
+            renderPreviews() {
+                for (let i = 0; i < 3; i++) {
+                    const canvas = document.getElementById(`preview${i}`);
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.clearRect(0, 0, 50, 50);
+                    
+                    if (this.previewBlocks[i] !== null) {
+                        this.drawBlock(ctx, this.previewBlocks[i], 0, 0, 50, false, true);
+                    }
+                }
+            }
+            
+            hasConnection(x, y, direction) {
+                const block = this.grid[y]?.[x];
+                if (!block) return false;
+                
+                if (!block.getConnector(direction)) return false;
+                
+                const directions = [
+                    {dx: 0, dy: -1, opposite: 2},
+                    {dx: 1, dy: 0, opposite: 3},
+                    {dx: 0, dy: 1, opposite: 0},
+                    {dx: -1, dy: 0, opposite: 1}
+                ];
+                
+                const dir = directions[direction];
+                const nx = x + dir.dx;
+                const ny = y + dir.dy;
+                
+                if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) return false;
+                
+                const neighbor = this.grid[ny][nx];
+                if (!neighbor) return false;
+                
+                return neighbor.getConnector(dir.opposite);
+            }
+            
+            getGlowColor(x, y) {
+                const key = `${x},${y}`;
+                if (this.lastLoopCells.has(key)) {
+                    return this.chainGlowColors.get(key) || '#fff';
+                }
+                return null;
+            }
+            
+            drawBlock(ctx, block, x, y, size, isHighlighted = false, isPreview = false, glowColor = null) {
+                const padding = 2;
+                const s = size - padding * 2;
+                const px = x + padding;
+                const py = y + padding;
+                
+                const gridX = Math.floor(x / this.cellSize);
+                const gridY = Math.floor(y / this.cellSize);
+                
+                const connected = isPreview ? [false, false, false, false] : [
+                    this.hasConnection(gridX, gridY, 0),
+                    this.hasConnection(gridX, gridY, 1),
+                    this.hasConnection(gridX, gridY, 2),
+                    this.hasConnection(gridX, gridY, 3)
+                ];
+                
+                let hasFree = false;
+                if (!isPreview && this.grid[gridY][gridX]) {
+                    hasFree = this.hasFreeConnectors(gridX, gridY);
+                }
+                
+                if (glowColor && !isPreview) {
+                    ctx.shadowColor = glowColor;
+                    ctx.shadowBlur = 20;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                
+                if (isHighlighted) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                } else if (glowColor) {
+                    ctx.fillStyle = glowColor + '33';
+                } else if (hasFree) {
+                    ctx.fillStyle = 'rgba(231, 76, 60, 0.15)';
+                } else {
+                    ctx.fillStyle = '#1a1a2e';
+                }
+                ctx.fillRect(px, py, s, s);
+                
+                ctx.strokeStyle = glowColor || (isHighlighted ? '#fff' : (hasFree ? '#e74c3c' : block.color));
+                ctx.lineWidth = glowColor ? 3 : (isHighlighted ? 3 : 2);
+                ctx.lineCap = 'square';
+                ctx.shadowBlur = 0;
+                
+                if (!connected[0]) {
+                    ctx.beginPath();
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(px + s, py);
+                    ctx.stroke();
+                }
+                if (!connected[1]) {
+                    ctx.beginPath();
+                    ctx.moveTo(px + s, py);
+                    ctx.lineTo(px + s, py + s);
+                    ctx.stroke();
+                }
+                if (!connected[2]) {
+                    ctx.beginPath();
+                    ctx.moveTo(px + s, py + s);
+                    ctx.lineTo(px, py + s);
+                    ctx.stroke();
+                }
+                if (!connected[3]) {
+                    ctx.beginPath();
+                    ctx.moveTo(px, py + s);
+                    ctx.lineTo(px, py);
+                    ctx.stroke();
+                }
+                
+                ctx.strokeStyle = glowColor || (isHighlighted ? '#fff' : block.color);
+                ctx.lineWidth = glowColor ? 5 : (isHighlighted ? 5 : 4);
+                ctx.lineCap = 'round';
+                
+                if (glowColor && !isPreview) {
+                    ctx.shadowColor = glowColor;
+                    ctx.shadowBlur = 10;
+                }
+                
+                const centerX = x + size / 2;
+                const centerY = y + size / 2;
+                const length = s / 2 - 2;
+                
+                if (block.getConnector(0)) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(centerX, centerY - length - (connected[0] ? 4 : 0));
+                    ctx.stroke();
+                }
+                if (block.getConnector(1)) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(centerX + length + (connected[1] ? 4 : 0), centerY);
+                    ctx.stroke();
+                }
+                if (block.getConnector(2)) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(centerX, centerY + length + (connected[2] ? 4 : 0));
+                    ctx.stroke();
+                }
+                if (block.getConnector(3)) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(centerX - length - (connected[3] ? 4 : 0), centerY);
+                    ctx.stroke();
+                }
+                
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = glowColor || (isHighlighted ? '#fff' : block.color);
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, glowColor ? 7 : (isHighlighted ? 6 : 5), 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (hasFree && !isHighlighted && !glowColor) {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.beginPath();
+                    ctx.arc(px + s - 4, py + 4, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            draw() {
+                this.ctx.fillStyle = '#0a0a0f';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                this.ctx.lineWidth = 1;
+                
+                for (let i = 0; i <= this.gridSize; i++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(i * this.cellSize, 0);
+                    this.ctx.lineTo(i * this.cellSize, this.canvas.height);
+                    this.ctx.stroke();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, i * this.cellSize);
+                    this.ctx.lineTo(this.canvas.width, i * this.cellSize);
+                    this.ctx.stroke();
+                }
+                
+                if (this.selectedSlot !== null && this.hoverCell.x >= 0) {
+                    const hx = this.hoverCell.x * this.cellSize;
+                    const hy = this.hoverCell.y * this.cellSize;
+                    
+                    if (!this.grid[this.hoverCell.y][this.hoverCell.x]) {
+                        this.ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+                        this.ctx.fillRect(hx, hy, this.cellSize, this.cellSize);
+                        
+                        const ghostBlock = this.previewBlocks[this.selectedSlot];
+                        if (ghostBlock) {
+                            this.ctx.globalAlpha = 0.5;
+                            this.drawBlock(this.ctx, ghostBlock, hx, hy, this.cellSize, false, true);
+                            this.ctx.globalAlpha = 1;
+                        }
+                    } else {
+                        this.ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
+                        this.ctx.fillRect(hx, hy, this.cellSize, this.cellSize);
+                    }
+                }
+                
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        if (this.grid[y][x]) {
+                            const isHighlighted = this.lastLoopCells.has(`${x},${y}`);
+                            const glowColor = this.getGlowColor(x, y);
+                            this.drawBlock(this.ctx, this.grid[y][x], 
+                                x * this.cellSize, y * this.cellSize, this.cellSize, isHighlighted, false, glowColor);
+                        }
+                    }
+                }
+                
+                this.particles = this.particles.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.15;
+                    p.life -= p.decay || 0.02;
+                    
+                    if (p.life > 0) {
+                        this.ctx.globalAlpha = p.life;
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.shadowColor = p.color;
+                        ctx.shadowBlur = 10;
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.shadowBlur = 0;
+                        this.ctx.globalAlpha = 1;
+                        return true;
+                    }
+                    return false;
+                });
+            }
+            
+            animate() {
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            updateScore() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('highScore').textContent = this.highScore;
+                document.getElementById('loops').textContent = this.loops;
+                
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('circuitBlastHigh', this.highScore);
+                }
+            }
+            
+            gameOver() {
+                this.isGameOver = true;
+                document.getElementById('finalScore').textContent = `Очки: ${this.score}`;
+                document.getElementById('finalLoops').textContent = `Петель: ${this.loops}`;
+                document.getElementById('gameOverScreen').classList.add('show');
+            }
+            
+            newGame() {
+                this.isGameOver = false;
+                this.score = 0;
+                this.loops = 0;
+                this.previewBlocks = [null, null, null];
+                this.selectedSlot = null;
+                this.hoverCell = { x: -1, y: -1 };
+                this.lastLoopCells.clear();
+                this.chainGlowColors.clear();
+                this.particles = [];
+                document.getElementById('gameOverScreen').classList.remove('show');
+                this.setupGrid();
+                this.generateNewSet();
+                this.updateScore();
+            }
+        }
+
+        const game = new CircuitBlast();
+    </script>
+</body>
+</html>
