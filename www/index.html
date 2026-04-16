@@ -238,6 +238,41 @@
             margin-bottom: 30px;
             opacity: 0.7;
         }
+        #comboPopup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            text-align: center;
+            pointer-events: none;
+            z-index: 500;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #comboPopup.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #comboPopup.hide {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.3s ease-in, opacity 0.2s ease-in;
+        }
+        .combo-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 30px currentColor;
+            animation: pulse 0.5s ease-in-out;
+        }
+        .combo-count {
+            font-size: 1.5em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body>
@@ -270,6 +305,10 @@
             </div>
         </div>
     </div>
+    <div id="comboPopup">
+        <div class="combo-text" id="comboText">КРУТО!</div>
+        <div class="combo-count" id="comboCount">КОМБО x4</div>
+    </div>
     <div id="settingsModal">
         <div class="settings-content">
             <h2>⚙️ Настройки</h2>
@@ -299,6 +338,35 @@
                 legendary: ['#ff1744', '#f50057', '#d500f9']
             }
         };
+        
+        const COMBO_PHRASES = [
+            'КРУТО!',
+            'ОТЛИЧНО!',
+            'СУПЕР!',
+            'ВАУ!',
+            'БОМБА!',
+            'КЛАСС!',
+            'МОЛОДЕЦ!',
+            'ИМБА!',
+            'ОГОНЬ!',
+            'ТОП!',
+            'ПЕРФЕКТО!',
+            'ГЕНИАЛЬНО!',
+            'ШИКАРНО!',
+            'ЗВЕРСКИ!',
+            'ЛЕГЕНДАРНО!'
+        ];
+        
+        const COMBO_COLORS = [
+            '#4fc3f7',
+            '#69f0ae',
+            '#ffd54f',
+            '#ff8a65',
+            '#ff6b9d',
+            '#e040fb',
+            '#7c4dff'
+        ];
+        
         const BLOCK_TYPES = {
             EMPTY: { connectors: [0,0,0,0], color: '#2c3e50' },
             STRAIGHT: { variants: [{ connectors: [1,0,1,0] },{ connectors: [0,1,0,1] }] },
@@ -306,6 +374,7 @@
             T_SHAPE: { variants: [{ connectors: [1,1,1,0] },{ connectors: [0,1,1,1] },{ connectors: [1,0,1,1] },{ connectors: [1,1,0,1] }] },
             CROSS: { connectors: [1,1,1,1] }
         };
+        
         class Block {
             constructor(type, variant = 0) {
                 this.type = type;
@@ -335,6 +404,7 @@
             getConnector(direction) { return this.connectors[direction]; }
             getConnectorCount() { return this.connectors.filter(c => c).length; }
         }
+        
         class CircuitBlast {
             constructor() {
                 this.canvas = document.getElementById('mainCanvas');
@@ -355,6 +425,7 @@
                 this.chainGlowColors = new Map();
                 this.init();
             }
+            
             init() {
                 this.updateScore();
                 this.setupGrid();
@@ -363,6 +434,7 @@
                 this.setupEvents();
                 this.animate();
             }
+            
             placeInitialBlocks() {
                 const innerPositions = [];
                 for (let y = 1; y < this.gridSize - 1; y++) {
@@ -383,8 +455,10 @@
                     this.grid[pos.y][pos.x] = block;
                 }
             }
+            
             openSettings() { document.getElementById('settingsModal').classList.add('show'); }
             closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+            
             setupGrid() {
                 this.grid = [];
                 for (let y = 0; y < this.gridSize; y++) {
@@ -393,6 +467,7 @@
                     this.grid.push(row);
                 }
             }
+            
             generateNewSet() {
                 for (let i = 0; i < 3; i++) this.previewBlocks[i] = this.randomBlock();
                 this.selectedSlot = null;
@@ -400,6 +475,7 @@
                 this.renderPreviews();
                 if (!this.canPlaceAny()) this.gameOver();
             }
+            
             updateSlotClasses() {
                 for (let i = 0; i < 3; i++) {
                     const slot = document.getElementById(`slot${i}`);
@@ -411,6 +487,7 @@
                     }
                 }
             }
+            
             randomBlock() {
                 const types = ['STRAIGHT', 'CORNER', 'T_SHAPE', 'CROSS'];
                 const weights = [2, 3, 2, 1];
@@ -427,6 +504,7 @@
                 }
                 return new Block('STRAIGHT', 0);
             }
+            
             setupEvents() {
                 for (let i = 0; i < 3; i++) {
                     const slot = document.getElementById(`slot${i}`);
@@ -438,6 +516,7 @@
                 this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this.onCanvasMove(e.touches[0]); });
                 this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this.onCanvasClick(e.changedTouches[0]); });
             }
+            
             onSlotClick(slotIndex) {
                 if (this.isGameOver) return;
                 if (this.previewBlocks[slotIndex] === null) return;
@@ -446,6 +525,7 @@
                 this.updateSlotClasses();
                 this.renderPreviews();
             }
+            
             onCanvasMove(e) {
                 if (this.isGameOver) return;
                 if (this.selectedSlot === null) return;
@@ -457,7 +537,9 @@
                 if (gridX >= 0 && gridX < this.gridSize && gridY >= 0 && gridY < this.gridSize) this.hoverCell = { x: gridX, y: gridY };
                 else this.hoverCell = { x: -1, y: -1 };
             }
+            
             onCanvasLeave() { this.hoverCell = { x: -1, y: -1 }; }
+            
             onCanvasClick(e) {
                 if (this.isGameOver) return;
                 if (this.selectedSlot === null) return;
@@ -470,6 +552,7 @@
                     this.placeBlock(gridX, gridY, this.selectedSlot);
                 }
             }
+            
             placeBlock(x, y, slotIndex) {
                 const block = this.previewBlocks[slotIndex];
                 this.grid[y][x] = block;
@@ -479,6 +562,7 @@
                 if (loops.length > 0) {
                     this.combo = loops.length;
                     this.assignGlowColors(loops);
+                    this.showComboPopup(loops);
                     this.clearLoops(loops);
                 } else this.combo = 1;
                 const remaining = this.previewBlocks.filter(b => b !== null).length;
@@ -488,16 +572,42 @@
                 this.renderPreviews();
                 this.updateScore();
             }
+            
+            showComboPopup(loops) {
+                const popup = document.getElementById('comboPopup');
+                const textEl = document.getElementById('comboText');
+                const countEl = document.getElementById('comboCount');
+                
+                const totalCells = loops.reduce((sum, loop) => sum + loop.size, 0);
+                const phrase = COMBO_PHRASES[Math.floor(Math.random() * COMBO_PHRASES.length)];
+                const color = COMBO_COLORS[Math.floor(Math.random() * COMBO_COLORS.length)];
+                
+                textEl.textContent = phrase;
+                textEl.style.color = color;
+                countEl.textContent = `КОМБО x${totalCells}`;
+                countEl.style.color = color;
+                
+                popup.classList.remove('hide');
+                popup.classList.add('show');
+                
+                setTimeout(() => {
+                    popup.classList.remove('show');
+                    popup.classList.add('hide');
+                }, 1500);
+            }
+            
             canPlaceAny() {
                 for (let y = 0; y < this.gridSize; y++) for (let x = 0; x < this.gridSize; x++) if (!this.grid[y][x]) return true;
                 return false;
             }
+            
             canPlaceRemaining() {
                 let freeCells = 0;
                 for (let y = 0; y < this.gridSize; y++) for (let x = 0; x < this.gridSize; x++) if (!this.grid[y][x]) freeCells++;
                 const remainingBlocks = this.previewBlocks.filter(b => b !== null).length;
                 return freeCells >= remainingBlocks;
             }
+            
             isClosedLoop(component) {
                 if (component.size < 2) return false;
                 for (const cellKey of component) {
@@ -517,6 +627,7 @@
                 }
                 return true;
             }
+            
             findLoops() {
                 const loops = [];
                 const processed = new Set();
@@ -531,6 +642,7 @@
                 }
                 return loops;
             }
+            
             findConnectedComponent(startX, startY) {
                 const component = new Set();
                 const queue = [{x: startX, y: startY}];
@@ -556,6 +668,7 @@
                 }
                 return component;
             }
+            
             assignGlowColors(loops) {
                 this.chainGlowColors.clear();
                 const colors = COLORS.chainColors;
@@ -572,6 +685,7 @@
                     loop.forEach(key => this.chainGlowColors.set(key, glowColor));
                 });
             }
+            
             clearLoops(loops) {
                 let totalCells = 0;
                 this.lastLoopCells.clear();
@@ -592,6 +706,7 @@
                 this.updateScore();
                 setTimeout(() => { this.lastLoopCells.clear(); this.chainGlowColors.clear(); }, 600);
             }
+            
             createExplosion(gridX, gridY, color) {
                 const x = gridX * this.cellSize + this.cellSize / 2;
                 const y = gridY * this.cellSize + this.cellSize / 2;
@@ -602,6 +717,7 @@
                     this.particles.push({x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, color: color, size: 3 + Math.random() * 4, decay: 0.01 + Math.random() * 0.02});
                 }
             }
+            
             renderPreviews() {
                 for (let i = 0; i < 3; i++) {
                     const canvas = document.getElementById(`preview${i}`);
@@ -610,6 +726,7 @@
                     if (this.previewBlocks[i] !== null) this.drawBlock(ctx, this.previewBlocks[i], 0, 0, 50, false, true);
                 }
             }
+            
             hasConnection(x, y, direction) {
                 const block = this.grid[y]?.[x];
                 if (!block) return false;
@@ -622,11 +739,13 @@
                 if (!neighbor) return false;
                 return neighbor.getConnector(dir.opposite);
             }
+            
             getGlowColor(x, y) {
                 const key = `${x},${y}`;
                 if (this.lastLoopCells.has(key)) return this.chainGlowColors.get(key) || '#fff';
                 return null;
             }
+            
             drawBlock(ctx, block, x, y, size, isHighlighted = false, isPreview = false, glowColor = null) {
                 const padding = 2, s = size - padding * 2, px = x + padding, py = y + padding;
                 const gridX = Math.floor(x / this.cellSize), gridY = Math.floor(y / this.cellSize);
@@ -668,6 +787,7 @@
                     ctx.fill();
                 }
             }
+            
             hasFreeConnectors(x, y) {
                 const block = this.grid[y][x];
                 if (!block) return false;
@@ -682,6 +802,7 @@
                 }
                 return false;
             }
+            
             draw() {
                 this.ctx.fillStyle = 'rgba(10, 10, 20, 0.3)';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -739,7 +860,9 @@
                     return false;
                 });
             }
+            
             animate() { this.draw(); requestAnimationFrame(() => this.animate()); }
+            
             updateScore() {
                 document.getElementById('score').textContent = this.score;
                 document.getElementById('highScore').textContent = this.highScore;
@@ -749,12 +872,14 @@
                     document.getElementById('highScore').textContent = this.highScore;
                 }
             }
+            
             gameOver() {
                 this.isGameOver = true;
                 document.getElementById('finalScore').textContent = `Счёт: ${this.score}`;
                 document.getElementById('finalLoops').textContent = `Петель: ${this.loops}`;
                 document.getElementById('gameOverScreen').classList.add('show');
             }
+            
             newGame() {
                 this.isGameOver = false;
                 this.score = 0;
@@ -773,6 +898,7 @@
                 this.updateScore();
             }
         }
+        
         const game = new CircuitBlast();
     </script>
 </body>
