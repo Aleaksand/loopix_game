@@ -31,30 +31,21 @@ jobs:
     
     - name: Build and Sign APK
       run: |
-        # Создаём cordova проект СРАЗУ с нужным build.json внутри
-        cordova create build-temp com.yourname.circuitblast CircuitBlast
+        WORKSPACE="${{ github.workspace }}"
         
-        # Копируем файлы проекта
+        cordova create build-temp com.yourname.circuitblast CircuitBlast
         cp -r www build-temp/
         cp config.xml build-temp/
-        
-        # Создаём build.json внутри проекта (важно!)
         echo '{"android": {"release": {"packageType": "apk"}}}' > build-temp/build.json
         
-        # Переходим в директорию проекта
         cd build-temp
-        
-        # Добавляем платформу
         cordova platform add android
+        cordova build android --release --buildConfig="$WORKSPACE/build-temp/build.json"
         
-        # Собираем с build.json (теперь он в корне проекта)
-        cordova build android --release --buildConfig=build.json
-        
-        # Проверяем путь к APK
         APK_PATH="platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
         
         if [ ! -f "$APK_PATH" ]; then
-          echo "❌ Файл не найден по пути: $(pwd)/$APK_PATH"
+          echo "❌ Файл не найден: $(pwd)/$APK_PATH"
           find . -name "*.apk" -type f
           exit 1
         fi
@@ -62,14 +53,11 @@ jobs:
         echo "✅ APK найден: $(pwd)/$APK_PATH"
         APK_DIR=$(dirname "$APK_PATH")
         
-        # Генерируем keystore
         keytool -genkey -v -keystore "$APK_DIR/my.keystore" -keyalg RSA -keysize 2048 -validity 10000 -alias app -storepass password -keypass password -dname "CN=Android,O=Android,C=US"
         
-        # Подписываем APK
         APK_SIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
         $APK_SIGNER sign --ks "$APK_DIR/my.keystore" --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out "CircuitBlast.apk" "$APK_PATH"
         
-        # Сохраняем путь к финальному APK
         echo "FINAL_APK_PATH=$(pwd)/CircuitBlast.apk" >> $GITHUB_ENV
     
     - name: Upload APK
