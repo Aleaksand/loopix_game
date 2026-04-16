@@ -87,6 +87,7 @@
             position: relative;
             background: rgba(0, 0, 0, 0.2);
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .preview-slot.has-block:hover {
             transform: scale(1.05);
@@ -240,7 +241,7 @@
     </style>
 </head>
 <body>
-    <h1>⚡ Circuit Blast</h1>
+    <h1>Circuit Blast</h1>
     <div id="settingsBtn" onclick="game.openSettings()">⚙️</div>
     <div id="gameContainer">
         <div id="scoreBoard">
@@ -249,8 +250,8 @@
                 <span class="score-value" id="score">0</span>
             </div>
             <div class="score-item">
-                <span class="score-label">Комбо</span>
-                <span class="score-value" id="loops">×1</span>
+                <span class="score-label">Рекорд</span>
+                <span class="score-value" id="highScore">0</span>
             </div>
         </div>
         <canvas id="mainCanvas" width="300" height="300"></canvas>
@@ -342,7 +343,7 @@
                 this.cellSize = 50;
                 this.grid = [];
                 this.score = 0;
-                this.highScore = localStorage.getItem('circuitBlastHigh') || 0;
+                this.highScore = parseInt(localStorage.getItem('circuitBlastHigh')) || 0;
                 this.loops = 0;
                 this.combo = 1;
                 this.previewBlocks = [null, null, null];
@@ -741,10 +742,11 @@
             animate() { this.draw(); requestAnimationFrame(() => this.animate()); }
             updateScore() {
                 document.getElementById('score').textContent = this.score;
-                document.getElementById('loops').textContent = '×' + this.combo;
+                document.getElementById('highScore').textContent = this.highScore;
                 if (this.score > this.highScore) {
                     this.highScore = this.score;
                     localStorage.setItem('circuitBlastHigh', this.highScore);
+                    document.getElementById('highScore').textContent = this.highScore;
                 }
             }
             gameOver() {
