@@ -41,15 +41,15 @@ jobs:
         cordova platform add android
         cordova build android --release --buildConfig=${{ github.workspace }}/build.json
         
-        # Ищем APK во всем каталоге build-temp по маске
-        APK_PATH=$(find . -name "*-release-unsigned.apk" | head -n 1)
+        # Используем абсолютный путь, который мы видели в ваших логах
+        APK_PATH="${{ github.workspace }}/build-temp/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk"
         
-        if [ -z "$APK_PATH" ]; then
-          echo "❌ Ошибка: APK файл не найден!"
+        if [ ! -f "$APK_PATH" ]; then
+          echo "❌ Файл не найден по пути: $APK_PATH"
           exit 1
         fi
         
-        echo "✅ APK найден по пути: $APK_PATH"
+        echo "✅ APK подтвержден: $APK_PATH"
         APK_DIR=$(dirname "$APK_PATH")
         
         keytool -genkey -v -keystore "$APK_DIR/my.keystore" -keyalg RSA -keysize 2048 -validity 10000 -alias app -storepass password -keypass password -dname "CN=Android,O=Android,C=US"
@@ -57,7 +57,6 @@ jobs:
         APK_SIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
         $APK_SIGNER sign --ks "$APK_DIR/my.keystore" --ks-key-alias app --ks-pass pass:password --key-pass pass:password --out "CircuitBlast.apk" "$APK_PATH"
         
-        # Сохраняем абсолютный путь к итоговому файлу
         echo "FINAL_APK_PATH=$(pwd)/CircuitBlast.apk" >> $GITHUB_ENV
     
     - name: Upload APK
