@@ -19,6 +19,7 @@
             color: white;
             overflow: hidden;
             background: linear-gradient(180deg, #1a1a3e 0%, #2d2d5a 100%);
+            transition: background 0.5s ease;
             touch-action: manipulation;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             position: fixed;
@@ -28,11 +29,20 @@
             bottom: 0;
         }
         h1 {
-            margin: 20px 0;
-            font-size: 1.8em;
-            letter-spacing: 2px;
-            color: white;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            margin: 0;
+            padding: 25px 0 15px;
+            font-size: 2.8em;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: transparent;
+            background: linear-gradient(135deg, #4fc3f7 0%, #69f0ae 50%, #ffd54f 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(79, 195, 247, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 10;
+            transform: perspective(500px) rotateX(2deg);
+            line-height: 1.2;
         }
         #gameContainer {
             display: flex;
@@ -92,9 +102,15 @@
             font-size: 1.6em;
             font-weight: bold;
             color: #4fc3f7;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .score-value.combo {
             color: #ffd54f;
+        }
+        .score-value.animate {
+            transform: scale(1.3);
+            color: #ffd54f;
+            text-shadow: 0 0 20px #ffd54f;
         }
         #mainCanvas {
             border-radius: 20px;
@@ -524,7 +540,7 @@
             filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
         }
         .combo-count {
-            font-size: 1.8em;
+            font-size: 1.5em;
             margin-top: 10px;
             opacity: 0.9;
             font-weight: bold;
@@ -682,7 +698,7 @@
     </style>
 </head>
 <body>
-    <h1>Loopix</h1>
+    <h1>LOOPIX</h1>
     <div id="settingsBtn" onclick="game.openSettings()">⚙️</div>
     <div id="hammerBtn" onclick="game.useHammer()" title="Удалить блок (смотреть рекламу)">
         🔨
@@ -732,7 +748,7 @@
             <div class="tutorial-text">Выбери блок</div>
         </div>
         <div class="tutorial-step" id="step2">
-            <div class="tutorial-text">Зажми и тяни чтобы повернуть</div>
+            <div class="tutorial-text">Свайпни или нажми чтобы повернуть</div>
         </div>
         <div class="tutorial-step" id="step3">
             <div class="tutorial-text">Ставь сюда</div>
@@ -783,7 +799,7 @@
                 <button class="settings-btn danger" onclick="game.resetAllData(); game.closeSettings()">🗑️ Сбросить все данные</button>
             </div>
             
-            <div class="settings-footer">Loopix v2.0</div>
+            <div class="settings-footer">Loopix v0.3</div>
         </div>
     </div>
     <div id="adModal">
@@ -808,7 +824,7 @@
             }
         })();
         
-        // Аудио менеджер с приятными звуками
+        // Аудио менеджер
         class AudioManager {
             constructor() {
                 this.context = null;
@@ -843,42 +859,35 @@
                 return this.context && this.context.state === 'running';
             }
             
-            // Приятные звуки для всех блоков
             playPlace(blockType = 'STRAIGHT') {
                 if (!this.enabled) return;
                 this.ensureContext().then(running => {
                     if (!running) return;
                     
                     const now = this.context.currentTime;
-                    
-                    // Основной тон - мягкий и приятный
                     const osc1 = this.context.createOscillator();
                     const osc2 = this.context.createOscillator();
                     const gain = this.context.createGain();
                     const filter = this.context.createBiquadFilter();
                     
-                    // Настройки для разных блоков - все с мягкими частотами
                     const sounds = {
-                        'STRAIGHT': { freq1: 440, freq2: 550, duration: 0.1 },  // A4 и C#5 - приятное созвучие
-                        'CORNER': { freq1: 523, freq2: 659, duration: 0.12 },    // C5 и E5 - мажорная терция
-                        'T_SHAPE': { freq1: 587, freq2: 698, duration: 0.11 },   // D5 и F5 - мягкая минорная терция
-                        'CROSS': { freq1: 659, freq2: 783, duration: 0.1 }       // E5 и G5 - приятное созвучие
+                        'STRAIGHT': { freq1: 440, freq2: 550, duration: 0.1 },
+                        'CORNER': { freq1: 523, freq2: 659, duration: 0.12 },
+                        'T_SHAPE': { freq1: 587, freq2: 698, duration: 0.11 },
+                        'CROSS': { freq1: 659, freq2: 783, duration: 0.1 }
                     };
                     
                     const sound = sounds[blockType] || sounds['STRAIGHT'];
                     
-                    // Фильтр для смягчения звука
                     filter.type = 'lowpass';
                     filter.frequency.value = 2000;
                     filter.Q.value = 0.5;
                     
-                    // Мягкие синусоиды
                     osc1.type = 'sine';
                     osc2.type = 'sine';
                     osc1.frequency.value = sound.freq1;
                     osc2.frequency.value = sound.freq2;
                     
-                    // Плавная огибающая
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.01);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + sound.duration);
@@ -905,7 +914,7 @@
                     const gain = this.context.createGain();
                     
                     osc.type = 'sine';
-                    osc.frequency.value = 880; // A5 - приятный высокий тон
+                    osc.frequency.value = 880;
                     
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.1, now + 0.01);
@@ -925,12 +934,10 @@
                     if (!running) return;
                     
                     const now = this.context.currentTime;
-                    
-                    // Приятные аккорды для комбо
-                    const chordNotes = size >= 10 ? [523.25, 659.25, 783.99, 1046.50] : // C E G C
-                                      size >= 7 ? [523.25, 659.25, 783.99] :            // C E G
-                                      size >= 5 ? [523.25, 659.25] :                     // C E
-                                      [523.25];                                          // C
+                    const chordNotes = size >= 10 ? [523.25, 659.25, 783.99, 1046.50] :
+                                      size >= 7 ? [523.25, 659.25, 783.99] :
+                                      size >= 5 ? [523.25, 659.25] :
+                                      [523.25];
                     
                     chordNotes.forEach((freq, i) => {
                         const osc = this.context.createOscillator();
@@ -972,7 +979,7 @@
                     filter.frequency.value = 1000;
                     
                     osc.type = 'sine';
-                    osc.frequency.value = 330; // E4
+                    osc.frequency.value = 330;
                     
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.01);
@@ -1084,10 +1091,20 @@
             }
         };
         
+        // Цены блоков
+        const BLOCK_PRICES = {
+            'STRAIGHT': 2,
+            'CORNER': 2,
+            'T_SHAPE': 4,
+            'CROSS': 8
+        };
+        
+        // Список фраз похвалы
         const COMBO_PHRASES = [
-            'КРУТО!', 'ОТЛИЧНО!', 'СУПЕР!', 'ВАУ!', 'БОМБА!',
-            'КЛАСС!', 'МОЛОДЕЦ!', 'ИМБА!', 'ОГОНЬ!', 'ТОП!',
-            'ПЕРФЕКТО!', 'ГЕНИАЛЬНО!', 'ШИКАРНО!', 'ЗВЕРСКИ!', 'ЛЕГЕНДАРНО!'
+            'КРУТО!', 'ОТЛИЧНО!', 'СУПЕР!', 'ВАУ!', 'КЛАСС!',
+            'МОЛОДЕЦ!', 'ИМБА!', 'ОГОНЬ!', 'ГЕНИЙ!', 'ШИКАРНО!',
+            'ЛЕГЕНДА!', 'МАШИНА!', 'МЕГА-ХОРОШ!', 'БУЙЯ!', 'СОЛО!',
+            'СЮДА!', 'УЛЬТРА-ХОРОШ!'
         ];
         
         const COMBO_COLORS = [
@@ -1103,10 +1120,12 @@
             CROSS: { connectorCount: 4, connectors: [1,1,1,1] }
         };
         
+        // Уровни сложности на основе очков
         const DIFFICULTY_LEVELS = {
-            0: { name: 'Лёгкий', maxConnectors: 2 },
-            1: { name: 'Средний', maxConnectors: 3 },
-            2: { name: 'Сложный', maxConnectors: 4 }
+            0: { name: 'Лёгкий', minScore: 0, description: 'STRAIGHT, CORNER' },
+            1: { name: 'Средний', minScore: 500, description: '+ T_SHAPE (редко)' },
+            2: { name: 'Сложный', minScore: 2000, description: 'T_SHAPE чаще, + CROSS (редко)' },
+            3: { name: 'Мастер', minScore: 5000, description: 'CROSS чаще' }
         };
         
         class Block {
@@ -1114,6 +1133,7 @@
                 this.type = type;
                 this.variant = variant;
                 this.rotation = 0;
+                this.price = BLOCK_PRICES[type] || 0;
                 if (type === 'CROSS') {
                     this.connectors = [...BLOCK_TYPES.CROSS.connectors];
                 } else if (type === 'EMPTY') {
@@ -1148,6 +1168,8 @@
                 this.cellSize = 50;
                 this.grid = [];
                 this.score = 0;
+                this.displayScore = 0;
+                this.scoreAnimationFrame = null;
                 this.highScore = parseInt(localStorage.getItem('loopixHigh')) || 0;
                 this.loops = 0;
                 this.combo = 1;
@@ -1182,16 +1204,18 @@
                 this.dragSlot = -1;
                 this.dragStartX = 0;
                 this.dragStartY = 0;
-                this.dragTotalDistance = 0;
-                this.dragRotateThreshold = 30;
-                this.lastRotateDistance = 0;
-                this.dragWasClick = true;
                 this.dragStartSlot = -1;
+                this.dragRotated = false;
+                this.dragThreshold = 20;
                 
                 // Для пульсации цепи
                 this.chainPulsePhase = 0;
                 this.longestChain = null;
                 this.longestChainLength = 0;
+                
+                // Градиент фона - бирюзовый -> синий -> фиолетовый
+                this.bgHue = 170; // Бирюзовый
+                this.bgDirection = 1;
                 
                 this.init();
             }
@@ -1213,6 +1237,38 @@
                 this.setupGrid();
                 this.checkTutorial();
                 this.animate();
+                this.startBackgroundAnimation();
+            }
+            
+            startBackgroundAnimation() {
+                // Плавная анимация фона: бирюзовый (160) -> синий (220) -> фиолетовый (280) -> обратно
+                setInterval(() => {
+                    this.bgHue += 0.5 * this.bgDirection;
+                    
+                    if (this.bgHue >= 280) {
+                        this.bgHue = 280;
+                        this.bgDirection = -1;
+                    } else if (this.bgHue <= 160) {
+                        this.bgHue = 160;
+                        this.bgDirection = 1;
+                    }
+                    
+                    const hue1 = this.bgHue;
+                    const hue2 = Math.min(hue1 + 30, 300);
+                    document.body.style.background = `linear-gradient(180deg, hsl(${hue1}, 60%, 12%) 0%, hsl(${hue2}, 55%, 18%) 100%)`;
+                }, 100);
+            }
+            
+            updateDifficultyByScore() {
+                if (this.score >= 5000) {
+                    this.difficultyLevel = 3;
+                } else if (this.score >= 2000) {
+                    this.difficultyLevel = 2;
+                } else if (this.score >= 500) {
+                    this.difficultyLevel = 1;
+                } else {
+                    this.difficultyLevel = 0;
+                }
             }
             
             toggleSound() {
@@ -1276,6 +1332,41 @@
                 setTimeout(() => {
                     this.darkOverlay.classList.remove('active');
                 }, duration);
+            }
+            
+            animateScore(targetScore) {
+                if (this.scoreAnimationFrame) {
+                    cancelAnimationFrame(this.scoreAnimationFrame);
+                }
+                
+                const startScore = this.displayScore;
+                const diff = targetScore - startScore;
+                const duration = 500;
+                const startTime = performance.now();
+                
+                const scoreElement = document.getElementById('score');
+                scoreElement.classList.add('animate');
+                setTimeout(() => scoreElement.classList.remove('animate'), 300);
+                
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                    this.displayScore = Math.floor(startScore + diff * easeOutQuart);
+                    
+                    document.getElementById('score').textContent = this.displayScore;
+                    
+                    if (progress < 1) {
+                        this.scoreAnimationFrame = requestAnimationFrame(animate);
+                    } else {
+                        this.displayScore = targetScore;
+                        document.getElementById('score').textContent = targetScore;
+                        this.scoreAnimationFrame = null;
+                    }
+                };
+                
+                this.scoreAnimationFrame = requestAnimationFrame(animate);
             }
             
             checkTutorial() {
@@ -1501,40 +1592,37 @@
                 }
             }
             
-            getAvailableBlockTypes() {
-                const maxConnectors = DIFFICULTY_LEVELS[this.difficultyLevel].maxConnectors;
-                const available = [];
-                
-                for (const [type, data] of Object.entries(BLOCK_TYPES)) {
-                    if (type === 'EMPTY') continue;
-                    const typeConnectors = data.connectorCount;
-                    if (typeof typeConnectors === 'number' && typeConnectors <= maxConnectors) {
-                        available.push(type);
-                    }
-                }
-                
-                return available;
-            }
-            
             randomBlock() {
-                const availableTypes = this.getAvailableBlockTypes();
-                
-                const weights = {
-                    'STRAIGHT': 2,
-                    'CORNER': 3,
-                    'T_SHAPE': 2,
-                    'CROSS': 1
+                const baseWeight = 100;
+                let weights = {
+                    'STRAIGHT': baseWeight,
+                    'CORNER': baseWeight,
+                    'T_SHAPE': 0,
+                    'CROSS': 0
                 };
                 
+                // Настройка весов в зависимости от уровня сложности
+                if (this.difficultyLevel >= 1) {
+                    weights['T_SHAPE'] = baseWeight / 2; // 1/2 от базового
+                }
+                if (this.difficultyLevel >= 2) {
+                    weights['T_SHAPE'] = baseWeight; // Как у базовых
+                    weights['CROSS'] = baseWeight / 4; // 1/4 от базового
+                }
+                if (this.difficultyLevel >= 3) {
+                    weights['CROSS'] = baseWeight / 2; // 1/2 от базового
+                }
+                
                 let totalWeight = 0;
-                availableTypes.forEach(type => {
-                    totalWeight += weights[type] || 1;
-                });
+                for (const type in weights) {
+                    totalWeight += weights[type];
+                }
                 
                 let random = Math.random() * totalWeight;
                 
-                for (const type of availableTypes) {
-                    random -= weights[type] || 1;
+                for (const type in weights) {
+                    if (weights[type] === 0) continue;
+                    random -= weights[type];
                     if (random <= 0) {
                         let variant = 0;
                         if (BLOCK_TYPES[type].variants) {
@@ -1623,9 +1711,7 @@
                 this.dragStartSlot = slotIndex;
                 this.dragStartX = clientX;
                 this.dragStartY = clientY;
-                this.dragTotalDistance = 0;
-                this.lastRotateDistance = 0;
-                this.dragWasClick = true;
+                this.dragRotated = false;
                 
                 this.updateSlotClasses();
                 this.renderPreviews();
@@ -1633,39 +1719,27 @@
             
             updateDrag(clientX, clientY) {
                 if (!this.dragActive) return;
+                if (this.dragRotated) return;
                 
                 const deltaX = clientX - this.dragStartX;
                 const deltaY = clientY - this.dragStartY;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                this.dragTotalDistance = distance;
-                
-                if (distance > 10) {
-                    this.dragWasClick = false;
-                }
-                
-                let rotateCount = Math.floor(distance / this.dragRotateThreshold);
-                
-                // Ограничение в обучении
-                if (this.tutorialActive && this.tutorialStep === 2 && this.dragSlot === 0) {
-                    const block = this.previewBlocks[0];
-                    if (block.connectors[0] === 1 && block.connectors[1] === 1 && 
-                        block.connectors[2] === 0 && block.connectors[3] === 0) {
-                        this.lastRotateDistance = rotateCount;
-                        return;
+                if (distance >= this.dragThreshold) {
+                    if (this.tutorialActive && this.tutorialStep === 2 && this.dragSlot === 0) {
+                        const block = this.previewBlocks[0];
+                        if (block.connectors[0] === 1 && block.connectors[1] === 1 && 
+                            block.connectors[2] === 0 && block.connectors[3] === 0) {
+                            this.dragRotated = true;
+                            return;
+                        }
                     }
-                    rotateCount = Math.min(rotateCount, 1);
-                }
-                
-                const rotateDiff = rotateCount - this.lastRotateDistance;
-                
-                if (rotateDiff > 0) {
-                    for (let i = 0; i < rotateDiff; i++) {
-                        this.previewBlocks[this.dragSlot].rotate();
-                        audioManager.playRotate();
-                        vibrationManager.lightVibration();
-                    }
+                    
+                    this.previewBlocks[this.dragSlot].rotate();
+                    audioManager.playRotate();
+                    vibrationManager.lightVibration();
                     this.renderPreviews();
+                    this.dragRotated = true;
                     
                     if (this.tutorialActive && this.tutorialStep === 2 && this.dragSlot === 0) {
                         const block = this.previewBlocks[0];
@@ -1675,28 +1749,26 @@
                         }
                     }
                 }
-                
-                this.lastRotateDistance = rotateCount;
             }
             
             endDrag() {
                 if (!this.dragActive) return;
                 
-                const wasClick = this.dragWasClick && this.dragTotalDistance < 10;
                 const slotIndex = this.dragStartSlot;
-                const wasDrag = !wasClick && this.dragTotalDistance >= 10;
+                const wasDrag = this.dragRotated;
                 
                 this.dragActive = false;
                 this.dragSlot = -1;
                 
-                if (wasClick) {
-                    this.handleSlotClick(slotIndex);
-                } else if (wasDrag) {
+                if (wasDrag) {
                     this.selectedSlot = slotIndex;
                     this.updateSlotClasses();
+                } else {
+                    this.handleSlotClick(slotIndex);
                 }
                 
                 this.dragStartSlot = -1;
+                this.dragRotated = false;
                 this.updateSlotClasses();
             }
             
@@ -1824,6 +1896,7 @@
                     }
                     this.updateSlotClasses();
                     this.renderPreviews();
+                    this.updateScore();
                     return;
                 }
                 
@@ -1854,7 +1927,9 @@
                     this.assignGlowColors(loops);
                     this.showComboPopup(loops);
                     this.clearLoops(loops, loops.length);
-                    this.increaseDifficulty(loops.length);
+                    
+                    // Обновляем сложность на основе нового счёта
+                    this.updateDifficultyByScore();
                     
                     setTimeout(() => this.findLongestChain(), 100);
                 } else {
@@ -1896,14 +1971,6 @@
                 
                 this.longestChain = maxChain;
                 this.longestChainLength = maxLength;
-            }
-            
-            increaseDifficulty(chainsCleared) {
-                if (this.difficultyLevel < 2 && (chainsCleared >= 3 || this.loops >= 10)) {
-                    this.difficultyLevel = 2;
-                } else if (this.difficultyLevel < 1 && (chainsCleared >= 2 || this.loops >= 3)) {
-                    this.difficultyLevel = 1;
-                }
             }
             
             useHammer() {
@@ -1979,7 +2046,7 @@
                 setTimeout(() => {
                     popup.classList.remove('show');
                     popup.classList.add('hide');
-                }, 1500);
+                }, 2000);
             }
             
             canPlaceAny() {
@@ -2092,9 +2159,25 @@
             
             clearLoops(loops, chainsCleared = 1) {
                 let totalCells = 0;
+                let totalPoints = 0;
                 this.lastLoopCells.clear();
+                
                 loops.forEach(loop => {
                     totalCells += loop.size;
+                    
+                    // Считаем очки для этой петли: сумма цен блоков * количество блоков в петле
+                    let loopPrice = 0;
+                    loop.forEach(key => {
+                        const [x, y] = key.split(',').map(Number);
+                        const block = this.grid[y][x];
+                        if (block) {
+                            loopPrice += block.price;
+                        }
+                    });
+                    
+                    const loopPoints = loopPrice * loop.size;
+                    totalPoints += loopPoints;
+                    
                     loop.forEach(key => this.lastLoopCells.add(key));
                     loop.forEach(key => {
                         const [x, y] = key.split(',').map(Number);
@@ -2103,11 +2186,12 @@
                         this.grid[y][x] = null;
                     });
                 });
-                const sizeBonus = loops.reduce((sum, loop) => sum + loop.size, 0);
-                const points = sizeBonus * sizeBonus * 10 * this.combo;
-                this.score += points;
+                
+                this.score += totalPoints;
                 this.loops += chainsCleared;
+                this.animateScore(this.score);
                 this.updateScore();
+                
                 setTimeout(() => {
                     this.lastLoopCells.clear();
                     this.chainGlowColors.clear();
@@ -2493,6 +2577,7 @@
             newGame() {
                 this.isGameOver = false;
                 this.score = 0;
+                this.displayScore = 0;
                 this.loops = 0;
                 this.combo = 1;
                 this.difficultyLevel = 0;
@@ -2511,6 +2596,7 @@
                 this.dragActive = false;
                 this.dragSlot = -1;
                 this.dragStartSlot = -1;
+                this.dragRotated = false;
                 this.longestChain = null;
                 this.longestChainLength = 0;
                 this.chainPulsePhase = 0;
