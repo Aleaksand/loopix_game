@@ -8,29 +8,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-    
+
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-    
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-    
+
     - name: Install Cordova + tools
       run: |
         npm install -g cordova
         npm install -g cordova-res
-    
+
     # 📁 создаём проект
     - name: Create Cordova Project
       run: |
@@ -38,30 +41,34 @@ jobs:
         cp -r www build-temp/
         cp config.xml build-temp/
         cp -r resources build-temp/
-    
-    # 🎨 Генерация иконок и splash
-    - name: Generate Icons & Splash
-      working-directory: build-temp
-      run: cordova-res android
-    
+
     # 📱 Android
     - name: Add Android Platform
       working-directory: build-temp
       run: cordova platform add android
-    
+
+    # 🎨 Генерация иконки и splash
+    - name: Generate Resources
+      working-directory: build-temp
+      run: cordova-res android --skip-config --copy
+
+    # 💦 Splash plugin
+    - name: Add Splash Plugin
+      working-directory: build-temp
+      run: cordova plugin add cordova-plugin-splashscreen
+
     # 🔢 versionCode
     - name: Set versionCode
       working-directory: build-temp
       run: |
         VERSION_CODE=${{ github.run_number }}
-        sed -i "s/android-versionCode=\"[0-9]*\"/android-versionCode=\"$VERSION_CODE\"/" config.xml || \
         sed -i "s/<widget/<widget android-versionCode=\"$VERSION_CODE\"/" config.xml
-    
+
     # 🔐 keystore
     - name: Decode Keystore
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my.keystore
-    
+
     # 🔐 build config
     - name: Create build.json
       working-directory: build-temp
@@ -78,7 +85,7 @@ jobs:
           }
         }
         EOF
-    
+
     # 📦 сборка APK
     - name: Build APK
       working-directory: build-temp
@@ -86,13 +93,13 @@ jobs:
         cordova build android --release \
         --buildConfig=$(pwd)/build.json \
         -- --packageType=apk
-    
-    # 🔍 найти файл
+
+    # 🔍 найти APK
     - name: Find APK
       run: |
         APK_PATH=$(find . -name "*.apk" | head -n 1)
         echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-    
+
     # 📤 загрузка
     - name: Upload APK
       uses: actions/upload-artifact@v4
