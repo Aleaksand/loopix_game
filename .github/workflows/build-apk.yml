@@ -1,4 +1,4 @@
-name: Build AAB
+name: Build Loopix AAB
 
 on:
   push:
@@ -32,11 +32,11 @@ jobs:
     # 📁 создаём проект
     - name: Create Cordova Project
       run: |
-        cordova create build-temp com.yourname.circuitblast CircuitBlast
+        cordova create build-temp com.yourname.loopix Loopix
         cp -r www build-temp/
         cp config.xml build-temp/
     
-    # 📱 добавляем платформу
+    # 📱 Android
     - name: Add Android Platform
       working-directory: build-temp
       run: cordova platform add android
@@ -49,12 +49,12 @@ jobs:
         sed -i "s/android-versionCode=\"[0-9]*\"/android-versionCode=\"$VERSION_CODE\"/" config.xml || \
         sed -i "s/<widget/<widget android-versionCode=\"$VERSION_CODE\"/" config.xml
     
-    # 🔐 декод keystore
+    # 🔐 keystore
     - name: Decode Keystore
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my.keystore
     
-    # 🔐 создаём build.json
+    # 🔐 build config
     - name: Create build.json
       working-directory: build-temp
       run: |
@@ -71,16 +71,7 @@ jobs:
         }
         EOF
     
-    # 🧪 проверка (чтобы больше не было ошибок)
-    - name: Debug build.json
-      working-directory: build-temp
-      run: |
-        echo "📄 Содержимое build.json:"
-        cat build.json
-        echo "📁 Файлы:"
-        ls -la
-    
-    # 📦 сборка AAB
+    # 📦 сборка
     - name: Build AAB
       working-directory: build-temp
       run: |
@@ -88,17 +79,15 @@ jobs:
         --buildConfig=$(pwd)/build.json \
         -- --packageType=bundle
     
-    # 🔍 найти AAB
+    # 🔍 найти файл
     - name: Find AAB
       run: |
-        echo "🔍 Ищем AAB..."
-        find . -name "*.aab"
         AAB_PATH=$(find . -name "*.aab" | head -n 1)
         echo "AAB_PATH=$AAB_PATH" >> $GITHUB_ENV
     
-    # 📤 сохранить
+    # 📤 загрузка
     - name: Upload AAB
       uses: actions/upload-artifact@v4
       with:
-        name: CircuitBlast-AAB
+        name: Loopix-AAB
         path: ${{ env.AAB_PATH }}
