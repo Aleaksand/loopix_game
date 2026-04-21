@@ -13,7 +13,7 @@
 - Cordova для Android сборки
 
 ## 👤 Разработчик
-**Aleaksand**
+**Tsevan**
 
 ## 📦 Сборка
 ```bash
