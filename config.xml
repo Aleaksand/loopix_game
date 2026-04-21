@@ -36,9 +36,6 @@
     <!-- 📱 Android -->
     <platform name="android">
 
-        <!-- 🎨 Иконка (если не используешь cordova-res) -->
-        <icon src="res/icon.png" />
-
         <!-- 📺 Splash screen -->
         <preference name="SplashScreen" value="screen" />
         <preference name="SplashScreenDelay" value="2000" />
@@ -49,7 +46,9 @@
         <preference name="StatusBarBackgroundColor" value="#000000" />
 
         <!-- 🔐 Безопасность -->
-        <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+        <edit-config file="app/src/main/AndroidManifest.xml"
+                     mode="merge"
+                     target="/manifest/application">
             <application android:usesCleartextTraffic="true" />
         </edit-config>
 
