@@ -29,15 +29,19 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
     
+    # 📁 создаём проект
     - name: Create Cordova Project
       run: |
         cordova create build-temp com.yourname.circuitblast CircuitBlast
         cp -r www build-temp/
         cp config.xml build-temp/
     
+    # 📱 добавляем платформу
     - name: Add Android Platform
       working-directory: build-temp
-      run: cordova platform add android
+      run: |
+        cordova platform add android@latest
+        cordova requirements
     
     # 🔢 versionCode
     - name: Set versionCode
@@ -52,10 +56,12 @@ jobs:
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my.keystore
     
-    # 🔐 настройка подписи
+    # 🔐 настройка подписи (ВАЖНО: после platform add)
     - name: Setup signing
       working-directory: build-temp/platforms/android
       run: |
+        echo "➡️ Настраиваем подпись..."
+
         cat >> gradle.properties <<EOF
         MYAPP_UPLOAD_STORE_FILE=../../../../my.keystore
         MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.KEY_ALIAS }}
@@ -63,7 +69,8 @@ jobs:
         MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
         EOF
 
-        sed -i '/buildTypes {/a\
+        # добавляем signingConfigs если нет
+        sed -i '/android {/a\
             signingConfigs {\
                 release {\
                     storeFile file(MYAPP_UPLOAD_STORE_FILE)\
@@ -74,24 +81,27 @@ jobs:
             }\
         ' app/build.gradle
 
-        sed -i 's/buildTypes {/buildTypes {\
+        # подключаем подпись к release
+        sed -i '/buildTypes {/a\
             release {\
                 signingConfig signingConfigs.release\
             }\
-        /' app/build.gradle
+        ' app/build.gradle
     
     # 📦 сборка AAB
     - name: Build AAB
       working-directory: build-temp
       run: cordova build android --release -- --packageType=bundle
     
-    # 🔍 найти файл
+    # 🔍 найти AAB
     - name: Find AAB
       run: |
+        echo "🔍 Ищем AAB..."
+        find . -name "*.aab"
         AAB_PATH=$(find . -name "*.aab" | head -n 1)
         echo "AAB_PATH=$AAB_PATH" >> $GITHUB_ENV
     
-    # 📤 сохранить как артефакт
+    # 📤 сохранить артефакт
     - name: Upload AAB
       uses: actions/upload-artifact@v4
       with:
