@@ -29,19 +29,17 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
     
-    # 📁 создаём проект
+    # 📁 проект
     - name: Create Cordova Project
       run: |
         cordova create build-temp com.yourname.circuitblast CircuitBlast
         cp -r www build-temp/
         cp config.xml build-temp/
     
-    # 📱 добавляем платформу
+    # 📱 платформа
     - name: Add Android Platform
       working-directory: build-temp
-      run: |
-        cordova platform add android@latest
-        cordova requirements
+      run: cordova platform add android
     
     # 🔢 versionCode
     - name: Set versionCode
@@ -51,57 +49,41 @@ jobs:
         sed -i "s/android-versionCode=\"[0-9]*\"/android-versionCode=\"$VERSION_CODE\"/" config.xml || \
         sed -i "s/<widget/<widget android-versionCode=\"$VERSION_CODE\"/" config.xml
     
-    # 🔐 keystore из secrets
+    # 🔐 keystore
     - name: Decode Keystore
       run: |
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my.keystore
     
-    # 🔐 настройка подписи (ВАЖНО: после platform add)
-    - name: Setup signing
-      working-directory: build-temp/platforms/android
+    # 🔐 cordova build.json (ВАЖНО)
+    - name: Create build.json
+      working-directory: build-temp
       run: |
-        echo "➡️ Настраиваем подпись..."
-
-        cat >> gradle.properties <<EOF
-        MYAPP_UPLOAD_STORE_FILE=../../../../my.keystore
-        MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.KEY_ALIAS }}
-        MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
-        MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+        cat > build.json <<EOF
+        {
+          "android": {
+            "release": {
+              "keystore": "../my.keystore",
+              "storePassword": "${{ secrets.KEYSTORE_PASSWORD }}",
+              "alias": "${{ secrets.KEY_ALIAS }}",
+              "password": "${{ secrets.KEY_PASSWORD }}",
+              "keystoreType": ""
+            }
+          }
+        }
         EOF
-
-        # добавляем signingConfigs если нет
-        sed -i '/android {/a\
-            signingConfigs {\
-                release {\
-                    storeFile file(MYAPP_UPLOAD_STORE_FILE)\
-                    storePassword MYAPP_UPLOAD_STORE_PASSWORD\
-                    keyAlias MYAPP_UPLOAD_KEY_ALIAS\
-                    keyPassword MYAPP_UPLOAD_KEY_PASSWORD\
-                }\
-            }\
-        ' app/build.gradle
-
-        # подключаем подпись к release
-        sed -i '/buildTypes {/a\
-            release {\
-                signingConfig signingConfigs.release\
-            }\
-        ' app/build.gradle
     
-    # 📦 сборка AAB
+    # 📦 сборка
     - name: Build AAB
       working-directory: build-temp
-      run: cordova build android --release -- --packageType=bundle
+      run: cordova build android --release --buildConfig=build.json -- --packageType=bundle
     
     # 🔍 найти AAB
     - name: Find AAB
       run: |
-        echo "🔍 Ищем AAB..."
-        find . -name "*.aab"
         AAB_PATH=$(find . -name "*.aab" | head -n 1)
         echo "AAB_PATH=$AAB_PATH" >> $GITHUB_ENV
     
-    # 📤 сохранить артефакт
+    # 📤 сохранить
     - name: Upload AAB
       uses: actions/upload-artifact@v4
       with:
