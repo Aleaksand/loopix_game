@@ -40,24 +40,29 @@ jobs:
           cp -r www build-temp/
           cp config.xml build-temp/
 
-      # 📱 платформа + фиксы
+      # 📱 добавляем платформу
       - name: Add Android Platform
         working-directory: build-temp
         run: |
           cordova platform rm android || true
           cordova platform add android
 
-          # 🔥 СОЗДАЁМ gradle.properties
-          mkdir -p platforms/android
-          touch platforms/android/gradle.properties
+      # 🔥 КРИТИЧНО: prepare (фикс ошибки Api.js)
+      - name: Prepare Cordova
+        working-directory: build-temp
+        run: cordova prepare android
 
-          # 🔥 ФИКСЫ ДЛЯ СБОРКИ
+      # 🔧 gradle fixes
+      - name: Fix Gradle
+        working-directory: build-temp
+        run: |
+          touch platforms/android/gradle.properties
           echo "org.gradle.jvmargs=-Xmx2048m" >> platforms/android/gradle.properties
           echo "android.useAndroidX=true" >> platforms/android/gradle.properties
           echo "android.enableJetifier=true" >> platforms/android/gradle.properties
           echo "kotlin.jvm.target=11" >> platforms/android/gradle.properties
 
-      # 🔌 плагины
+      # 🔌 плагины (ПОСЛЕ prepare!)
       - name: Add plugins
         working-directory: build-temp
         run: |
@@ -94,7 +99,7 @@ jobs:
           }
           EOF
 
-      # 📦 сборка APK
+      # 📦 сборка
       - name: Build APK
         working-directory: build-temp
         run: |
