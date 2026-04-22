@@ -47,7 +47,11 @@ jobs:
           cordova platform rm android || true
           cordova platform add android
 
-          # 🔥 ФИКС KOTLIN/JAVA КОНФЛИКТА
+          # 🔥 СОЗДАЁМ gradle.properties
+          mkdir -p platforms/android
+          touch platforms/android/gradle.properties
+
+          # 🔥 ФИКСЫ ДЛЯ СБОРКИ
           echo "org.gradle.jvmargs=-Xmx2048m" >> platforms/android/gradle.properties
           echo "android.useAndroidX=true" >> platforms/android/gradle.properties
           echo "android.enableJetifier=true" >> platforms/android/gradle.properties
