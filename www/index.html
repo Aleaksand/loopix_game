@@ -734,6 +734,124 @@
             font-size: 12px;
         }
         
+        /* Loader */
+        #loader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0b0f2a, #000);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .loader-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-grid {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: linear-gradient(#1a1f4d 1px, transparent 1px),
+                              linear-gradient(90deg, #1a1f4d 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: moveGrid 10s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes moveGrid {
+            from { transform: translate(0,0); }
+            to { transform: translate(-60px,-60px); }
+        }
+        
+        .loader-logo {
+            position: relative;
+            z-index: 2;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulse 2s infinite;
+        }
+        
+        .loader-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Fallback если нет картинки */
+        .loader-logo-fallback {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #4fc3f7, #69f0ae, #ffd54f);
+            border-radius: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 60px;
+            font-weight: bold;
+            color: #1a1a3e;
+            box-shadow: 0 0 40px rgba(79, 195, 247, 0.5);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px #00f); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px #0ff); }
+            100% { transform: scale(1); }
+        }
+        
+        .loader-lines {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .loader-line {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, #00f, #0ff, #ff0);
+            box-shadow: 0 0 10px #0ff;
+            animation: draw 2s infinite;
+        }
+        
+        .loader-line.l1 { top: 50px; left: 0; width: 0; }
+        .loader-line.l2 { top: 100px; left: 50px; width: 0; animation-delay: 0.5s; }
+        .loader-line.l3 { top: 150px; left: 20px; width: 0; animation-delay: 1s; }
+        
+        @keyframes draw {
+            0% { width: 0; opacity: 0; }
+            50% { width: 150px; opacity: 1; }
+            100% { width: 0; opacity: 0; }
+        }
+        
+        .loader-title {
+            position: absolute;
+            bottom: 80px;
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00f, #0ff, #ff0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: glow 2s infinite;
+        }
+        
+        @keyframes glow {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
         /* Убираем синее выделение на всех элементах */
         button, div, span, canvas {
             -webkit-tap-highlight-color: transparent;
@@ -746,6 +864,25 @@
     </style>
 </head>
 <body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-grid"></div>
+            
+            <div class="loader-logo">
+                <div class="loader-logo-fallback">🔄</div>
+            </div>
+            
+            <div class="loader-lines">
+                <div class="loader-line l1"></div>
+                <div class="loader-line l2"></div>
+                <div class="loader-line l3"></div>
+            </div>
+            
+            <div class="loader-title">LOOPIX</div>
+        </div>
+    </div>
+    
     <h1>LOOPIX</h1>
     <div id="settingsBtn">⚙️</div>
     <div id="hammerBtn" title="Удалить блок (смотреть рекламу)">
@@ -1059,6 +1196,31 @@
                 screen.orientation.lock('portrait').catch(() => {});
             }
         })();
+        
+        // Скрываем лоадер при загрузке
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.transition = 'opacity 0.5s';
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
+            }
+        }
+        
+        // Для Cordova/PhoneGap
+        document.addEventListener('deviceready', () => {
+            setTimeout(hideLoader, 1500);
+        }, false);
+        
+        // Для веба - скрываем после загрузки
+        window.addEventListener('load', () => {
+            // Если не Cordova, скрываем через 1.5 секунды
+            if (typeof cordova === 'undefined') {
+                setTimeout(hideLoader, 1500);
+            }
+        });
         
         const YaGames = {
             init: () => Promise.resolve({
@@ -2403,13 +2565,9 @@
             
             downloadShareImage() {
                 const canvas = document.getElementById('shareCanvas');
-                
-                // Создаём ссылку для скачивания
                 const link = document.createElement('a');
                 link.download = 'loopix-record.png';
                 link.href = canvas.toDataURL('image/png');
-                
-                // Добавляем в DOM, кликаем и удаляем
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -2418,16 +2576,11 @@
             async shareImage() {
                 const canvas = document.getElementById('shareCanvas');
                 
-                // Проверяем поддержку Web Share API
                 if (navigator.share && navigator.canShare) {
                     try {
-                        // Конвертируем canvas в blob
                         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                        
-                        // Создаём файл
                         const file = new File([blob], 'loopix-record.png', { type: 'image/png' });
                         
-                        // Проверяем, можно ли поделиться файлом
                         if (navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 title: I18N.t('shareTitle'),
@@ -2436,12 +2589,9 @@
                             });
                             return;
                         }
-                    } catch (e) {
-                        console.log('Share failed, falling back to download:', e);
-                    }
+                    } catch (e) {}
                 }
                 
-                // Fallback - скачивание
                 this.downloadShareImage();
             }
             
@@ -2451,7 +2601,6 @@
             }
             
             newGame() {
-                // Очищаем все интервалы
                 if (this.adInterval) {
                     clearInterval(this.adInterval);
                     this.adInterval = null;
