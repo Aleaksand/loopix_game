@@ -44,17 +44,21 @@ jobs:
       working-directory: build-temp
       run: cordova platform add android
 
-    # 🔌 УСТАНОВКА ПЛАГИНОВ (FIXED)
+    # 🔌 УСТАНОВКА ПЛАГИНОВ (СТАБИЛЬНАЯ)
     - name: Add plugins
       working-directory: build-temp
       run: |
         sudo apt-get update
-        sudo apt-get install -y git
+        sudo apt-get install -y git unzip
 
+        # стандартный плагин
         cordova plugin add cordova-plugin-x-socialsharing
 
-        # 🔥 ВАЖНО: .git в конце!
-        cordova plugin add https://github.com/yandexmobile/yandex-ads-cordova-plugin.git --nofetch
+        # 🔥 СКАЧИВАЕМ YANDEX ADS ВРУЧНУЮ
+        git clone https://github.com/yandexmobile/yandex-ads-cordova-plugin.git yandex-ads
+
+        # 🔥 УСТАНАВЛИВАЕМ КАК ЛОКАЛЬНЫЙ ПЛАГИН
+        cordova plugin add ./yandex-ads
 
     # 🔢 versionCode (для Google Play)
     - name: Set versionCode
