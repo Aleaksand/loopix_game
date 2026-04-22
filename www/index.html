@@ -2535,7 +2535,7 @@
             }
         }
         
-        // ========== YANDEX ADS (ФИНАЛЬНАЯ ВЕРСИЯ) ==========
+        // ========== YANDEX ADS (ПРАВИЛЬНОЕ API) ==========
         
         // 🔥 FALLBACK STUB (для тестов в браузере)
         function showRewardAdStub(callback) {
@@ -2625,23 +2625,15 @@
 
             console.log("[YANDEX] Show rewarded video");
 
-            window.plugins.yandexAds.showRewardedVideo(
-                {
-                    adUnitId: "R-M-19134091-2"
-                },
-                (result) => {
-                    console.log("[YANDEX] Reward result:", result);
+            window.plugins.yandexAds.showRewardedAd(
+                "R-M-19134091-2",
+                () => {
+                    console.log("[YANDEX] Reward получен");
                     window.adRunning = false;
-
-                    if (result && result.rewarded === true) {
-                        console.log("[YANDEX] Reward given");
-                        if (callback) callback();
-                    } else {
-                        console.log("[YANDEX] No reward (skipped)");
-                    }
+                    if (callback) callback();
                 },
-                (error) => {
-                    console.error("[YANDEX] Reward error:", error);
+                () => {
+                    console.log("[YANDEX] Ошибка или отмена");
                     window.adRunning = false;
                 }
             );
@@ -2665,9 +2657,7 @@
                 return;
             }
 
-            window.plugins.yandexAds.showInterstitialAd({
-                adUnitId: "R-M-19134091-3"
-            });
+            window.plugins.yandexAds.showInterstitialAd("R-M-19134091-3");
         }
         
         function onDeviceReady() {
@@ -2680,7 +2670,7 @@
             }
 
             if (window.plugins && window.plugins.yandexAds) {
-                console.log("[YANDEX] SDK ready");
+                console.log("[YANDEX] Plugin ready");
 
                 if (!window.bannerShown) {
                     window.bannerShown = true;
@@ -2688,9 +2678,8 @@
                     setTimeout(() => {
                         if (window.plugins && window.plugins.yandexAds) {
                             console.log("[YANDEX] Showing banner");
-                            window.plugins.yandexAds.showBanner({
-                                adUnitId: "R-M-19134091-1",
-                                position: "bottom"
+                            window.plugins.yandexAds.showBannerAd({
+                                adUnitId: "R-M-19134091-1"
                             });
                         }
                     }, 500);
