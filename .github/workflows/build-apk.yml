@@ -29,10 +29,8 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install Cordova + tools
-      run: |
-        npm install -g cordova
-        npm install -g cordova-res
+    - name: Install Cordova
+      run: npm install -g cordova
 
     # 📁 создаём проект
     - name: Create Cordova Project
@@ -40,28 +38,24 @@ jobs:
         cordova create build-temp com.tsevan.loopix Loopix
         cp -r www build-temp/
         cp config.xml build-temp/
-        cp -r resources build-temp/
 
-    # 📱 Android
+    # 📱 добавляем платформу
     - name: Add Android Platform
       working-directory: build-temp
       run: cordova platform add android
 
-    # 🎨 Генерация иконки и splash
-    - name: Generate Resources
+    # 🔌 ПЛАГИН ШАРИНГА (ВАЖНО!)
+    - name: Add plugins
       working-directory: build-temp
-      run: cordova-res android --skip-config --copy
+      run: |
+        cordova plugin add cordova-plugin-x-socialsharing
 
-    # 💦 Splash plugin
-    - name: Add Splash Plugin
-      working-directory: build-temp
-      run: cordova plugin add cordova-plugin-splashscreen
-
-    # 🔢 versionCode
+    # 🔢 versionCode (для Google Play)
     - name: Set versionCode
       working-directory: build-temp
       run: |
         VERSION_CODE=${{ github.run_number }}
+        sed -i "s/android-versionCode=\"[0-9]*\"/android-versionCode=\"$VERSION_CODE\"/" config.xml || \
         sed -i "s/<widget/<widget android-versionCode=\"$VERSION_CODE\"/" config.xml
 
     # 🔐 keystore
