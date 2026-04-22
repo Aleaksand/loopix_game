@@ -44,23 +44,16 @@ jobs:
       working-directory: build-temp
       run: cordova platform add android
 
-    # 🔌 ПЛАГИНЫ (БЕЗ GIT — СТАБИЛЬНО)
+    # 🔧 FIX для git
+    - name: Fix git
+      run: git config --global url."https://github.com/".insteadOf git@github.com:
+
+    # 🔌 ПЛАГИНЫ
     - name: Add plugins
       working-directory: build-temp
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-
-        # стандартный плагин
         cordova plugin add cordova-plugin-x-socialsharing
-
-        # 🔥 скачиваем zip Яндекс плагина
-        wget https://github.com/yandexmobile/yandex-ads-cordova-plugin/archive/refs/heads/master.zip
-
-        unzip master.zip
-
-        # 🔥 устанавливаем как локальный плагин
-        cordova plugin add ./yandex-ads-cordova-plugin-master
+        cordova plugin add https://github.com/maximnara/cordova-plugin-yandex-ads.git
 
     # 🔢 versionCode
     - name: Set versionCode
