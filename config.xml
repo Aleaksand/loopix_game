@@ -30,7 +30,7 @@
     
         <!-- Android 12 splash -->
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/splash.png" />
-        <preference name="AndroidWindowSplashScreenBackground" value="#ffffff" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#000000" />
     
     </platform>
 
