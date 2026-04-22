@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Loopix</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
         html, body {
             width: 100%;
             height: 100%;
@@ -121,6 +129,8 @@
             touch-action: none;
             position: relative;
             z-index: 1;
+            display: block;
+            -webkit-tap-highlight-color: transparent;
         }
         #previewPanel {
             display: flex;
@@ -206,10 +216,14 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         #settingsBtn:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: rotate(30deg);
+        }
+        #settingsBtn:active {
+            background: rgba(255, 255, 255, 0.3);
         }
         #hammerBtn {
             position: fixed;
@@ -232,10 +246,14 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         #hammerBtn:hover:not(.disabled) {
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(255, 213, 79, 0.6);
+        }
+        #hammerBtn:active:not(.disabled) {
+            transform: scale(0.95);
         }
         #hammerBtn.disabled {
             opacity: 0.3;
@@ -275,7 +293,7 @@
         #hammerIndicator.show {
             opacity: 1;
         }
-        #settingsModal {
+        #settingsModal, #gameOverModal, #adModal, #rescueModal, #shareModal {
             position: fixed;
             top: 0;
             left: 0;
@@ -288,10 +306,10 @@
             z-index: 1000;
             backdrop-filter: blur(5px);
         }
-        #settingsModal.show {
+        #settingsModal.show, #gameOverModal.show, #adModal.show, #rescueModal.show, #shareModal.show {
             display: flex;
         }
-        .settings-content {
+        .modal-content {
             background: linear-gradient(180deg, #2d2d5a 0%, #1a1a3e 100%);
             border-radius: 24px;
             padding: 30px;
@@ -301,11 +319,19 @@
             max-width: 350px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .settings-content h2 {
-            margin-bottom: 25px;
+        .modal-content h2, .modal-content h3 {
+            margin-bottom: 20px;
             color: white;
             font-size: 1.5em;
             font-weight: 600;
+        }
+        .modal-content h3 {
+            color: #ffd54f;
+        }
+        .modal-content p {
+            margin-bottom: 30px;
+            opacity: 0.8;
+            line-height: 1.5;
         }
         .setting-item {
             display: flex;
@@ -359,6 +385,7 @@
             position: relative;
             cursor: pointer;
             transition: background 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
         .toggle-switch.active {
             background: #4fc3f7;
@@ -378,13 +405,13 @@
         .toggle-switch.active::after {
             transform: translateX(22px);
         }
-        .settings-actions {
+        .modal-actions {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-top: 25px;
         }
-        .settings-btn {
+        .modal-btn {
             border: none;
             color: white;
             padding: 14px 20px;
@@ -397,43 +424,71 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
         }
-        .settings-btn.primary {
+        .modal-btn:active {
+            transform: scale(0.97);
+        }
+        .modal-btn.primary {
             background: linear-gradient(135deg, #4fc3f7, #29b6f6);
             box-shadow: 0 4px 15px rgba(79, 195, 247, 0.3);
         }
-        .settings-btn.primary:hover {
+        .modal-btn.primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
         }
-        .settings-btn.secondary {
+        .modal-btn.primary:active {
+            transform: translateY(0);
+        }
+        .modal-btn.secondary {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        .settings-btn.secondary:hover {
+        .modal-btn.secondary:hover {
             background: rgba(255, 255, 255, 0.15);
         }
-        .settings-footer {
+        .modal-btn.warning {
+            background: linear-gradient(135deg, #ffd54f, #ff8a65);
+            color: #1a1a3e;
+        }
+        .modal-footer {
             margin-top: 20px;
             font-size: 0.8em;
             opacity: 0.5;
         }
-        #gameOverScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-        #gameOverScreen.show {
+        .lang-selector {
             display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .lang-option {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            flex: 1;
+            max-width: 120px;
+        }
+        .lang-option.active {
+            background: #4fc3f7;
+            color: #1a1a3e;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.4);
+        }
+        .lang-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .lang-option:active {
+            transform: scale(0.95);
         }
         #gameOverScreen h2 {
             font-size: 2.5em;
@@ -524,6 +579,7 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
             white-space: nowrap;
         }
         @keyframes float {
@@ -550,6 +606,11 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        #tutorialSkip:active {
+            transform: translateX(-50%) scale(0.95);
         }
         .canvas-tutorial {
             animation: canvas-pulse 1.5s ease-in-out infinite;
@@ -582,43 +643,6 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
-        #adModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            backdrop-filter: blur(10px);
-        }
-        #adModal.show {
-            display: flex;
-        }
-        .ad-content {
-            background: linear-gradient(180deg, #2d2d5a 0%, #1a1a3e 100%);
-            border-radius: 24px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            min-width: 280px;
-            max-width: 320px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .ad-content h3 {
-            margin-bottom: 20px;
-            color: #ffd54f;
-            font-size: 1.3em;
-        }
-        .ad-content p {
-            margin-bottom: 30px;
-            opacity: 0.8;
-            line-height: 1.5;
-        }
         .ad-timer {
             font-size: 2em;
             color: #4fc3f7;
@@ -633,35 +657,19 @@
             50% { box-shadow: 0 0 50px rgba(79, 195, 247, 0.5); }
             100% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
         }
-        
-        #shareModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 4000;
-            backdrop-filter: blur(10px);
-            padding: 20px;
-        }
-        #shareModal.show {
-            display: flex;
-        }
         #shareCanvas {
             width: 100%;
-            max-width: 350px;
+            max-width: 280px;
             border-radius: 24px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         .share-buttons {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
         }
@@ -669,26 +677,30 @@
             background: linear-gradient(135deg, #4fc3f7, #29b6f6);
             border: none;
             color: white;
-            padding: 14px 25px;
-            font-size: 1em;
+            padding: 12px 18px;
+            font-size: 0.9em;
             border-radius: 30px;
             cursor: pointer;
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             box-shadow: 0 4px 15px rgba(79, 195, 247, 0.4);
             transition: all 0.3s;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            justify-content: center;
         }
         .share-btn.secondary {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: none;
         }
-        .share-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(79, 195, 247, 0.5);
+        .share-btn:active {
+            transform: scale(0.95);
         }
         .new-record-badge {
             background: linear-gradient(135deg, #ffd54f, #ff8a65);
@@ -705,74 +717,6 @@
             0%, 100% { box-shadow: 0 4px 20px rgba(255, 213, 79, 0.5); }
             50% { box-shadow: 0 8px 30px rgba(255, 213, 79, 0.8); }
         }
-        
-        #rescueModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 3500;
-            backdrop-filter: blur(10px);
-        }
-        #rescueModal.show {
-            display: flex;
-        }
-        .rescue-content {
-            background: linear-gradient(180deg, #2d2d5a 0%, #1a1a3e 100%);
-            border-radius: 24px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            min-width: 300px;
-            max-width: 350px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .rescue-content h3 {
-            margin-bottom: 15px;
-            color: #ffd54f;
-            font-size: 1.5em;
-        }
-        .rescue-content p {
-            margin-bottom: 30px;
-            opacity: 0.8;
-            line-height: 1.5;
-            font-size: 1.1em;
-        }
-        .rescue-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .rescue-btn {
-            background: linear-gradient(135deg, #ffd54f, #ff8a65);
-            border: none;
-            color: #1a1a3e;
-            padding: 16px 20px;
-            font-size: 1.1em;
-            border-radius: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            touch-action: manipulation;
-            box-shadow: 0 4px 15px rgba(255, 213, 79, 0.4);
-        }
-        .rescue-btn.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            box-shadow: none;
-        }
-        .rescue-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Место для баннера */
         #yandexBanner {
             position: fixed;
             bottom: 0;
@@ -789,12 +733,22 @@
             color: rgba(255, 255, 255, 0.5);
             font-size: 12px;
         }
+        
+        /* Убираем синее выделение на всех элементах */
+        button, div, span, canvas {
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        
+        button:focus, div:focus {
+            outline: none;
+        }
     </style>
 </head>
 <body>
     <h1>LOOPIX</h1>
-    <div id="settingsBtn" onclick="game.openSettings()">⚙️</div>
-    <div id="hammerBtn" onclick="game.useHammer()" title="Удалить блок (смотреть рекламу)">
+    <div id="settingsBtn">⚙️</div>
+    <div id="hammerBtn" title="Удалить блок (смотреть рекламу)">
         🔨
         <span class="ad-label">AD</span>
     </div>
@@ -802,15 +756,15 @@
     <div id="gameContainer">
         <div id="scoreBoard">
             <div class="score-item">
-                <span class="score-label">Счёт</span>
+                <span class="score-label" data-i18n="score">Счёт</span>
                 <span class="score-value" id="score">0</span>
             </div>
             <div class="score-item">
-                <span class="score-label">Рекорд</span>
+                <span class="score-label" data-i18n="record">Рекорд</span>
                 <span class="score-value" id="highScore">0</span>
             </div>
             <div class="score-item">
-                <span class="score-label">Макс Комбо</span>
+                <span class="score-label" data-i18n="maxCombo">Макс Комбо</span>
                 <span class="score-value combo" id="maxCombo">0</span>
             </div>
         </div>
@@ -830,103 +784,282 @@
             </div>
         </div>
     </div>
+    
     <div id="comboPopup">
         <div class="combo-text" id="comboText">КРУТО!</div>
         <div class="combo-count" id="comboCount">КОМБО x4</div>
     </div>
+    
     <div id="tutorialOverlay">
         <div class="tutorial-step" id="step1">
-            <div class="tutorial-text">Выбери блок</div>
+            <div class="tutorial-text" data-i18n="tutorialStep1">Выбери блок</div>
         </div>
         <div class="tutorial-step" id="step2">
-            <div class="tutorial-text">Свайпни или нажми чтобы повернуть</div>
+            <div class="tutorial-text" data-i18n="tutorialStep2">Свайпни или нажми чтобы повернуть</div>
         </div>
         <div class="tutorial-step" id="step3">
-            <div class="tutorial-text">Ставь сюда</div>
+            <div class="tutorial-text" data-i18n="tutorialStep3">Ставь сюда</div>
         </div>
         <div id="tutorialTarget" class="tutorial-target"></div>
-        <button id="tutorialSkip" onclick="game.skipTutorial()">Пропустить обучение</button>
+        <button id="tutorialSkip" data-i18n="skipTutorial">Пропустить обучение</button>
     </div>
+    
     <div id="settingsModal">
-        <div class="settings-content">
-            <h2>Настройки</h2>
+        <div class="modal-content">
+            <h2 data-i18n="settings">Настройки</h2>
+            
+            <div class="lang-selector">
+                <div class="lang-option" data-lang="ru">Русский</div>
+                <div class="lang-option" data-lang="en">English</div>
+            </div>
             
             <div class="setting-item">
-                <span class="setting-label">Звук</span>
+                <span class="setting-label" data-i18n="sound">Звук</span>
                 <div class="setting-control">
-                    <div class="toggle-switch active" id="soundToggle" onclick="game.toggleSound()"></div>
+                    <div class="toggle-switch active" id="soundToggle"></div>
                 </div>
             </div>
             
             <div class="setting-item">
-                <span class="setting-label">Громкость</span>
+                <span class="setting-label" data-i18n="volume">Громкость</span>
                 <div class="setting-control">
-                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" oninput="game.setVolume(this.value)">
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
                     <span class="volume-value" id="volumeValue">70%</span>
                 </div>
             </div>
             
             <div class="setting-item">
-                <span class="setting-label">Вибрация</span>
+                <span class="setting-label" data-i18n="vibration">Вибрация</span>
                 <div class="setting-control">
-                    <div class="toggle-switch active" id="vibrationToggle" onclick="game.toggleVibration()"></div>
+                    <div class="toggle-switch active" id="vibrationToggle"></div>
                 </div>
             </div>
             
-            <div class="settings-actions">
-                <button class="settings-btn primary" onclick="game.newGame(); game.closeSettings()">Начать заново</button>
-                <button class="settings-btn secondary" onclick="game.closeSettings()">Закрыть</button>
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="newGameBtn" data-i18n="newGame">Начать заново</button>
+                <button class="modal-btn secondary" id="closeSettingsBtn" data-i18n="close">Закрыть</button>
             </div>
             
-            <div class="settings-footer">Loopix v0.7</div>
+            <div class="modal-footer">Loopix v0.8</div>
         </div>
     </div>
+    
     <div id="adModal">
-        <div class="ad-content">
-            <h3>🔨 Реклама</h3>
-            <p>Просмотрите рекламу, чтобы удалить один блок</p>
+        <div class="modal-content">
+            <h3 data-i18n="adTitle">🔨 Реклама</h3>
+            <p data-i18n="adText">Просмотрите рекламу, чтобы удалить один блок</p>
             <div class="ad-timer" id="adTimer">5</div>
-            <button class="settings-btn secondary" onclick="game.cancelAd()">Отмена</button>
+            <button class="modal-btn secondary" id="cancelAdBtn" data-i18n="cancel">Отмена</button>
         </div>
     </div>
+    
     <div id="rescueModal">
-        <div class="rescue-content">
-            <h3>Последний шанс</h3>
-            <p>Нет ходов. Смотреть рекламу и использовать молоток?</p>
-            <div class="rescue-buttons">
-                <button class="rescue-btn" onclick="game.useRescueHammer()">Смотреть рекламу</button>
-                <button class="rescue-btn secondary" onclick="game.declineRescue()">Новая игра</button>
+        <div class="modal-content">
+            <h3 data-i18n="lastChance">Последний шанс</h3>
+            <p data-i18n="noMoves">Нет ходов. Смотреть рекламу и использовать молоток?</p>
+            <div class="modal-actions">
+                <button class="modal-btn warning" id="rescueHammerBtn" data-i18n="watchAd">Смотреть рекламу</button>
+                <button class="modal-btn secondary" id="declineRescueBtn" data-i18n="newGameShort">Новая игра</button>
             </div>
         </div>
     </div>
-    <div id="gameOverScreen">
-        <h2>GAME OVER</h2>
-        <div id="finalScore">Счёт: 0</div>
-        <div id="finalLoops">Петель: 0</div>
-        <button class="settings-btn primary" onclick="game.newGame()">Начать заново</button>
-    </div>
-    <div id="shareModal">
-        <div class="new-record-badge">🏆 НОВЫЙ РЕКОРД 🏆</div>
-        <canvas id="shareCanvas" width="1080" height="1080"></canvas>
-        <div class="share-buttons">
-            <button class="share-btn" onclick="game.downloadShareImage()">📥 Скачать</button>
-            <button class="share-btn" onclick="game.shareImage()">📤 Поделиться</button>
-            <button class="share-btn secondary" onclick="game.closeShareModal()">✕ Закрыть</button>
+    
+    <div id="gameOverModal">
+        <div class="modal-content" id="gameOverContent">
+            <h2>GAME OVER</h2>
+            <div id="finalScore">Счёт: 0</div>
+            <div id="finalLoops">Петель: 0</div>
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="playAgainBtn" data-i18n="playAgain">Начать заново</button>
+            </div>
         </div>
     </div>
     
-    <!-- Место для баннера Яндекса -->
-    <div id="yandexBanner">Рекламный баннер</div>
+    <div id="shareModal">
+        <div class="modal-content">
+            <div class="new-record-badge" data-i18n="newRecord">🏆 НОВЫЙ РЕКОРД 🏆</div>
+            <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+            <div class="share-buttons">
+                <button class="share-btn" id="downloadBtn" data-i18n="download">📥 Скачать</button>
+                <button class="share-btn" id="shareBtn" data-i18n="share">📤 Поделиться</button>
+                <button class="share-btn secondary" id="closeShareBtn" data-i18n="close">✕ Закрыть</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="yandexBanner" data-i18n="adBanner">Рекламный баннер</div>
     
     <script>
-        // Блокировка поворота экрана
+        // Определение языка системы
+        function detectSystemLanguage() {
+            const navLang = navigator.language || navigator.userLanguage || 'ru';
+            const lang = navLang.toLowerCase().split('-')[0];
+            const supportedLangs = ['ru', 'en'];
+            return supportedLangs.includes(lang) ? lang : 'ru';
+        }
+        
+        // Система локализации
+        const I18N = {
+            currentLang: localStorage.getItem('loopixLang') || detectSystemLanguage(),
+            
+            translations: {
+                ru: {
+                    score: 'Счёт',
+                    record: 'Рекорд',
+                    maxCombo: 'Макс Комбо',
+                    comboCool: 'КРУТО!',
+                    comboGreat: 'ОТЛИЧНО!',
+                    comboSuper: 'СУПЕР!',
+                    comboWow: 'ВАУ!',
+                    comboNice: 'КЛАСС!',
+                    comboGood: 'МОЛОДЕЦ!',
+                    comboImba: 'ИМБА!',
+                    comboFire: 'ОГОНЬ!',
+                    comboGenius: 'ГЕНИЙ!',
+                    comboAwesome: 'ШИКАРНО!',
+                    comboLegend: 'ЛЕГЕНДА!',
+                    comboMachine: 'МАШИНА!',
+                    comboMega: 'МЕГА-ХОРОШ!',
+                    comboBuya: 'БУЙЯ!',
+                    comboSolo: 'СОЛО!',
+                    comboHere: 'СЮДА!',
+                    comboUltra: 'УЛЬТРА-ХОРОШ!',
+                    comboTimes: 'КОМБО x',
+                    tutorialStep1: 'Выбери блок',
+                    tutorialStep2: 'Свайпни или нажми чтобы повернуть',
+                    tutorialStep3: 'Ставь сюда',
+                    skipTutorial: 'Пропустить обучение',
+                    settings: 'Настройки',
+                    sound: 'Звук',
+                    volume: 'Громкость',
+                    vibration: 'Вибрация',
+                    newGame: 'Начать заново',
+                    close: 'Закрыть',
+                    adTitle: '🔨 Реклама',
+                    adText: 'Просмотрите рекламу, чтобы удалить один блок',
+                    cancel: 'Отмена',
+                    lastChance: 'Последний шанс',
+                    noMoves: 'Нет ходов. Смотреть рекламу и использовать молоток?',
+                    watchAd: 'Смотреть рекламу',
+                    newGameShort: 'Новая игра',
+                    playAgain: 'Начать заново',
+                    newRecord: '🏆 НОВЫЙ РЕКОРД 🏆',
+                    download: '📥 Скачать',
+                    share: '📤 Поделиться',
+                    adBanner: 'Рекламный баннер',
+                    hammerHint: 'Удалить блок (смотреть рекламу)',
+                    hammerIndicator: '🔨 Выбери блок для удаления',
+                    finalScore: 'Счёт:',
+                    finalLoops: 'Петель:',
+                    points: 'очков',
+                    shareText: 'Я набрал {score} очков в Loopix! А ты так сможешь?',
+                    shareTitle: 'Loopix - Новый рекорд!',
+                    canYouBeat: 'А ТЫ ТАК СМОЖЕШЬ?'
+                },
+                en: {
+                    score: 'Score',
+                    record: 'Record',
+                    maxCombo: 'Max Combo',
+                    comboCool: 'COOL!',
+                    comboGreat: 'GREAT!',
+                    comboSuper: 'SUPER!',
+                    comboWow: 'WOW!',
+                    comboNice: 'NICE!',
+                    comboGood: 'GOOD!',
+                    comboImba: 'IMBA!',
+                    comboFire: 'FIRE!',
+                    comboGenius: 'GENIUS!',
+                    comboAwesome: 'AWESOME!',
+                    comboLegend: 'LEGEND!',
+                    comboMachine: 'MACHINE!',
+                    comboMega: 'MEGA!',
+                    comboBuya: 'BOOYAH!',
+                    comboSolo: 'SOLO!',
+                    comboHere: 'NICE!',
+                    comboUltra: 'ULTRA!',
+                    comboTimes: 'COMBO x',
+                    tutorialStep1: 'Select a block',
+                    tutorialStep2: 'Swipe or tap to rotate',
+                    tutorialStep3: 'Place here',
+                    skipTutorial: 'Skip tutorial',
+                    settings: 'Settings',
+                    sound: 'Sound',
+                    volume: 'Volume',
+                    vibration: 'Vibration',
+                    newGame: 'New Game',
+                    close: 'Close',
+                    adTitle: '🔨 Ad',
+                    adText: 'Watch an ad to remove one block',
+                    cancel: 'Cancel',
+                    lastChance: 'Last Chance',
+                    noMoves: 'No moves left. Watch ad to use hammer?',
+                    watchAd: 'Watch Ad',
+                    newGameShort: 'New Game',
+                    playAgain: 'Play Again',
+                    newRecord: '🏆 NEW RECORD 🏆',
+                    download: '📥 Download',
+                    share: '📤 Share',
+                    adBanner: 'Advertisement',
+                    hammerHint: 'Remove block (watch ad)',
+                    hammerIndicator: '🔨 Select a block to remove',
+                    finalScore: 'Score:',
+                    finalLoops: 'Loops:',
+                    points: 'points',
+                    shareText: 'I scored {score} points in Loopix! Can you beat that?',
+                    shareTitle: 'Loopix - New Record!',
+                    canYouBeat: 'CAN YOU BEAT THAT?'
+                }
+            },
+            
+            t(key, params = {}) {
+                let text = this.translations[this.currentLang]?.[key] || this.translations['ru'][key] || key;
+                for (const [param, value] of Object.entries(params)) {
+                    text = text.replace(`{${param}}`, value);
+                }
+                return text;
+            },
+            
+            setLanguage(lang) {
+                if (this.translations[lang]) {
+                    this.currentLang = lang;
+                    localStorage.setItem('loopixLang', lang);
+                    this.updateUI();
+                    return true;
+                }
+                return false;
+            },
+            
+            updateUI() {
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    el.textContent = this.t(key);
+                });
+                
+                document.querySelectorAll('.lang-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.lang === this.currentLang);
+                });
+                
+                if (typeof game !== 'undefined' && game.updateUITexts) {
+                    game.updateUITexts();
+                }
+            }
+        };
+        
+        const getComboPhrases = () => [
+            I18N.t('comboCool'), I18N.t('comboGreat'), I18N.t('comboSuper'), 
+            I18N.t('comboWow'), I18N.t('comboNice'), I18N.t('comboGood'),
+            I18N.t('comboImba'), I18N.t('comboFire'), I18N.t('comboGenius'), 
+            I18N.t('comboAwesome'), I18N.t('comboLegend'), I18N.t('comboMachine'),
+            I18N.t('comboMega'), I18N.t('comboBuya'), I18N.t('comboSolo'),
+            I18N.t('comboHere'), I18N.t('comboUltra')
+        ];
+        
         (function() {
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('portrait').catch(() => {});
             }
         })();
         
-        // Заглушка для Yandex SDK
         const YaGames = {
             init: () => Promise.resolve({
                 getAdv: () => ({
@@ -938,23 +1071,18 @@
                     setLeaderboardScore: () => Promise.resolve()
                 }),
                 getPlayer: () => ({
-                    getName: () => 'Игрок'
+                    getName: () => 'Player'
                 })
             })
         };
         
-        // Аудио менеджер
         class AudioManager {
             constructor() {
                 this.context = null;
                 this.enabled = localStorage.getItem('loopixSound') !== 'false';
                 this.volume = parseFloat(localStorage.getItem('loopixVolume') || '0.6');
                 this.initialized = false;
-                
-                if (this.enabled) {
-                    this.init();
-                }
-                
+                if (this.enabled) this.init();
                 this.updateUI();
             }
             
@@ -962,16 +1090,12 @@
                 try {
                     this.context = new (window.AudioContext || window.webkitAudioContext)();
                     this.initialized = true;
-                } catch (e) {
-                    console.log('Audio not supported');
-                }
+                } catch (e) {}
             }
             
             async ensureContext() {
                 if (!this.enabled) return false;
-                if (!this.context) {
-                    this.init();
-                }
+                if (!this.context) this.init();
                 if (this.context && this.context.state === 'suspended') {
                     await this.context.resume();
                 }
@@ -982,40 +1106,31 @@
                 if (!this.enabled) return;
                 this.ensureContext().then(running => {
                     if (!running) return;
-                    
                     const now = this.context.currentTime;
                     const osc1 = this.context.createOscillator();
                     const osc2 = this.context.createOscillator();
                     const gain = this.context.createGain();
                     const filter = this.context.createBiquadFilter();
-                    
                     const sounds = {
                         'STRAIGHT': { freq1: 440, freq2: 550, duration: 0.1 },
                         'CORNER': { freq1: 523, freq2: 659, duration: 0.12 },
                         'T_SHAPE': { freq1: 587, freq2: 698, duration: 0.11 },
                         'CROSS': { freq1: 659, freq2: 783, duration: 0.1 }
                     };
-                    
                     const sound = sounds[blockType] || sounds['STRAIGHT'];
-                    
                     filter.type = 'lowpass';
                     filter.frequency.value = 2000;
-                    filter.Q.value = 0.5;
-                    
                     osc1.type = 'sine';
                     osc2.type = 'sine';
                     osc1.frequency.value = sound.freq1;
                     osc2.frequency.value = sound.freq2;
-                    
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.01);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + sound.duration);
-                    
                     osc1.connect(filter);
                     osc2.connect(filter);
                     filter.connect(gain);
                     gain.connect(this.context.destination);
-                    
                     osc1.start(now);
                     osc2.start(now);
                     osc1.stop(now + sound.duration);
@@ -1027,21 +1142,16 @@
                 if (!this.enabled) return;
                 this.ensureContext().then(running => {
                     if (!running) return;
-                    
                     const now = this.context.currentTime;
                     const osc = this.context.createOscillator();
                     const gain = this.context.createGain();
-                    
                     osc.type = 'sine';
                     osc.frequency.value = 880;
-                    
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.1, now + 0.01);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-                    
                     osc.connect(gain);
                     gain.connect(this.context.destination);
-                    
                     osc.start(now);
                     osc.stop(now + 0.06);
                 });
@@ -1051,33 +1161,25 @@
                 if (!this.enabled) return;
                 this.ensureContext().then(running => {
                     if (!running) return;
-                    
                     const now = this.context.currentTime;
                     const chordNotes = size >= 10 ? [523.25, 659.25, 783.99, 1046.50] :
                                       size >= 7 ? [523.25, 659.25, 783.99] :
-                                      size >= 5 ? [523.25, 659.25] :
-                                      [523.25];
-                    
+                                      size >= 5 ? [523.25, 659.25] : [523.25];
                     chordNotes.forEach((freq, i) => {
                         const osc = this.context.createOscillator();
                         const gain = this.context.createGain();
                         const filter = this.context.createBiquadFilter();
-                        
                         filter.type = 'lowpass';
                         filter.frequency.value = 1500;
-                        
                         osc.type = i === 0 ? 'sine' : 'triangle';
                         osc.frequency.value = freq;
-                        
                         const startTime = now + i * 0.05;
                         gain.gain.setValueAtTime(0, startTime);
                         gain.gain.linearRampToValueAtTime(this.volume * 0.2, startTime + 0.02);
                         gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
-                        
                         osc.connect(filter);
                         filter.connect(gain);
                         gain.connect(this.context.destination);
-                        
                         osc.start(startTime);
                         osc.stop(startTime + 0.3);
                     });
@@ -1088,26 +1190,20 @@
                 if (!this.enabled) return;
                 this.ensureContext().then(running => {
                     if (!running) return;
-                    
                     const now = this.context.currentTime;
                     const osc = this.context.createOscillator();
                     const gain = this.context.createGain();
                     const filter = this.context.createBiquadFilter();
-                    
                     filter.type = 'lowpass';
                     filter.frequency.value = 1000;
-                    
                     osc.type = 'sine';
                     osc.frequency.value = 330;
-                    
                     gain.gain.setValueAtTime(0, now);
                     gain.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.01);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-                    
                     osc.connect(filter);
                     filter.connect(gain);
                     gain.connect(this.context.destination);
-                    
                     osc.start(now);
                     osc.stop(now + 0.2);
                 });
@@ -1117,10 +1213,7 @@
                 this.enabled = !this.enabled;
                 localStorage.setItem('loopixSound', this.enabled);
                 this.updateUI();
-                
-                if (this.enabled && !this.initialized) {
-                    this.init();
-                }
+                if (this.enabled && !this.initialized) this.init();
             }
             
             setVolume(value) {
@@ -1132,7 +1225,6 @@
             updateUI() {
                 const toggle = document.getElementById('soundToggle');
                 const slider = document.getElementById('volumeSlider');
-                
                 if (this.enabled) {
                     toggle.classList.add('active');
                     slider.disabled = false;
@@ -1140,14 +1232,12 @@
                     toggle.classList.remove('active');
                     slider.disabled = true;
                 }
-                
                 const volumePercent = Math.round(this.volume * 100);
                 slider.value = volumePercent;
                 document.getElementById('volumeValue').textContent = volumePercent + '%';
             }
         }
         
-        // Вибрация
         class VibrationManager {
             constructor() {
                 this.enabled = localStorage.getItem('loopixVibration') !== 'false';
@@ -1156,24 +1246,18 @@
             
             vibrate(pattern) {
                 if (!this.enabled) return;
-                if (typeof navigator.vibrate === 'function') {
-                    navigator.vibrate(pattern);
-                }
+                if (typeof navigator.vibrate === 'function') navigator.vibrate(pattern);
             }
             
             comboVibration(size) {
                 if (!this.enabled) return;
                 const pattern = size >= 10 ? [50, 40, 50, 40, 100] :
                                size >= 7 ? [40, 30, 60, 30, 80] :
-                               size >= 5 ? [30, 30, 50] :
-                               [20, 20, 40];
+                               size >= 5 ? [30, 30, 50] : [20, 20, 40];
                 this.vibrate(pattern);
             }
             
-            lightVibration() {
-                if (!this.enabled) return;
-                this.vibrate(10);
-            }
+            lightVibration() { this.vibrate(10); }
             
             toggle() {
                 this.enabled = !this.enabled;
@@ -1183,11 +1267,7 @@
             
             updateUI() {
                 const toggle = document.getElementById('vibrationToggle');
-                if (this.enabled) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
+                toggle.classList.toggle('active', this.enabled);
             }
         }
         
@@ -1195,12 +1275,7 @@
         const vibrationManager = new VibrationManager();
         
         const COLORS = {
-            blocks: {
-                STRAIGHT: '#4fc3f7',
-                CORNER: '#69f0ae',
-                T_SHAPE: '#ffd54f',
-                CROSS: '#ff8a65'
-            },
+            blocks: { STRAIGHT: '#4fc3f7', CORNER: '#69f0ae', T_SHAPE: '#ffd54f', CROSS: '#ff8a65' },
             chainColors: {
                 small: ['#4fc3f7', '#69f0ae', '#ffd54f'],
                 medium: ['#ff6b9d', '#4fc3f7', '#69f0ae'],
@@ -1210,38 +1285,15 @@
             }
         };
         
-        const BLOCK_PRICES = {
-            'STRAIGHT': 2,
-            'CORNER': 2,
-            'T_SHAPE': 4,
-            'CROSS': 8
-        };
-        
-        const COMBO_PHRASES = [
-            'КРУТО!', 'ОТЛИЧНО!', 'СУПЕР!', 'ВАУ!', 'КЛАСС!',
-            'МОЛОДЕЦ!', 'ИМБА!', 'ОГОНЬ!', 'ГЕНИЙ!', 'ШИКАРНО!',
-            'ЛЕГЕНДА!', 'МАШИНА!', 'МЕГА-ХОРОШ!', 'БУЙЯ!', 'СОЛО!',
-            'СЮДА!', 'УЛЬТРА-ХОРОШ!'
-        ];
-        
-        const COMBO_COLORS = [
-            '#4fc3f7', '#69f0ae', '#ffd54f', '#ff8a65',
-            '#ff6b9d', '#e040fb', '#7c4dff'
-        ];
+        const BLOCK_PRICES = { 'STRAIGHT': 2, 'CORNER': 2, 'T_SHAPE': 4, 'CROSS': 8 };
+        const COMBO_COLORS = ['#4fc3f7', '#69f0ae', '#ffd54f', '#ff8a65', '#ff6b9d', '#e040fb', '#7c4dff'];
         
         const BLOCK_TYPES = {
-            EMPTY: { connectorCount: 0, connectors: [0,0,0,0], color: '#2c3e50' },
-            STRAIGHT: { connectorCount: 2, connectors: 2, variants: [{ connectors: [1,0,1,0] },{ connectors: [0,1,0,1] }] },
-            CORNER: { connectorCount: 2, connectors: 2, variants: [{ connectors: [1,1,0,0] },{ connectors: [0,1,1,0] },{ connectors: [0,0,1,1] },{ connectors: [1,0,0,1] }] },
-            T_SHAPE: { connectorCount: 3, connectors: 3, variants: [{ connectors: [1,1,1,0] },{ connectors: [0,1,1,1] },{ connectors: [1,0,1,1] },{ connectors: [1,1,0,1] }] },
+            EMPTY: { connectorCount: 0, connectors: [0,0,0,0] },
+            STRAIGHT: { connectorCount: 2, variants: [{ connectors: [1,0,1,0] },{ connectors: [0,1,0,1] }] },
+            CORNER: { connectorCount: 2, variants: [{ connectors: [1,1,0,0] },{ connectors: [0,1,1,0] },{ connectors: [0,0,1,1] },{ connectors: [1,0,0,1] }] },
+            T_SHAPE: { connectorCount: 3, variants: [{ connectors: [1,1,1,0] },{ connectors: [0,1,1,1] },{ connectors: [1,0,1,1] },{ connectors: [1,1,0,1] }] },
             CROSS: { connectorCount: 4, connectors: [1,1,1,1] }
-        };
-        
-        const DIFFICULTY_LEVELS = {
-            0: { name: 'Лёгкий', minScore: 0, description: 'STRAIGHT, CORNER' },
-            1: { name: 'Средний', minScore: 500, description: '+ T_SHAPE (редко)' },
-            2: { name: 'Сложный', minScore: 2000, description: 'T_SHAPE чаще, + CROSS (редко)' },
-            3: { name: 'Мастер', minScore: 5000, description: 'CROSS чаще' }
         };
         
         class Block {
@@ -1250,21 +1302,10 @@
                 this.variant = variant;
                 this.rotation = 0;
                 this.price = BLOCK_PRICES[type] || 0;
-                if (type === 'CROSS') {
-                    this.connectors = [...BLOCK_TYPES.CROSS.connectors];
-                } else if (type === 'EMPTY') {
-                    this.connectors = [...BLOCK_TYPES.EMPTY.connectors];
-                } else {
-                    const variants = BLOCK_TYPES[type].variants;
-                    this.connectors = [...variants[variant].connectors];
-                }
-                this.updateColor();
-            }
-            updateColor() {
-                const colors = COLORS.blocks;
-                if (this.type === 'CROSS') this.color = colors.CROSS;
-                else if (this.type === 'EMPTY') this.color = '#2c3e50';
-                else this.color = colors[this.type];
+                if (type === 'CROSS') this.connectors = [...BLOCK_TYPES.CROSS.connectors];
+                else if (type === 'EMPTY') this.connectors = [0,0,0,0];
+                else this.connectors = [...BLOCK_TYPES[type].variants[variant].connectors];
+                this.color = COLORS.blocks[type] || '#2c3e50';
             }
             rotate() {
                 const [top, right, bottom, left] = this.connectors;
@@ -1285,7 +1326,6 @@
                 this.grid = [];
                 this.score = 0;
                 this.displayScore = 0;
-                this.scoreAnimationFrame = null;
                 this.highScore = parseInt(localStorage.getItem('loopixHigh')) || 0;
                 this.loops = 0;
                 this.combo = 1;
@@ -1305,54 +1345,119 @@
                 this.hammerAvailable = true;
                 this.nextHammerAt = 2000;
                 this.isRescueMode = false;
-                
                 this.lastClickTime = 0;
-                this.clickDelay = 150; // Изменено с 300 на 150
+                this.clickDelay = 150;
                 this.isProcessingClick = false;
-                
                 this.shakeIntensity = 0;
                 this.shakeDecay = 0.8;
                 this.gameContainer = document.getElementById('gameContainer');
                 this.blockScaleAnimations = new Map();
                 this.slowMotionActive = false;
                 this.timeScale = 1;
-                this.lastTimestamp = 0;
-                
                 this.dragActive = false;
                 this.dragSlot = -1;
                 this.dragStartX = 0;
                 this.dragStartY = 0;
-                this.dragStartSlot = -1;
                 this.dragRotated = false;
                 this.dragThreshold = 20;
-                
                 this.chainPulsePhase = 0;
                 this.longestChain = null;
                 this.longestChainLength = 0;
-                
                 this.bgHue = 170;
-                this.bgDirection = 1;
-                
                 this.isNewRecord = false;
+                this.adInterval = null;
                 
                 this.init();
                 this.setupAutoSave();
+                this.setupUIEvents();
+                I18N.updateUI();
+                this.updateUITexts();
+            }
+            
+            setupUIEvents() {
+                document.getElementById('settingsBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.openSettings();
+                });
+                document.getElementById('hammerBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.useHammer();
+                });
+                document.getElementById('soundToggle').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.toggleSound();
+                });
+                document.getElementById('volumeSlider').addEventListener('input', (e) => {
+                    this.setVolume(e.target.value);
+                });
+                document.getElementById('vibrationToggle').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.toggleVibration();
+                });
+                document.getElementById('newGameBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.newGame(); this.closeSettings();
+                });
+                document.getElementById('closeSettingsBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.closeSettings();
+                });
+                document.getElementById('cancelAdBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.cancelAd();
+                });
+                document.getElementById('rescueHammerBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.useRescueHammer();
+                });
+                document.getElementById('declineRescueBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.declineRescue();
+                });
+                document.getElementById('playAgainBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.newGame();
+                });
+                document.getElementById('downloadBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.downloadShareImage();
+                });
+                document.getElementById('shareBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.shareImage();
+                });
+                document.getElementById('closeShareBtn').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.closeShareModal();
+                });
+                document.getElementById('tutorialSkip').addEventListener('click', (e) => {
+                    e.preventDefault(); e.stopPropagation(); this.skipTutorial();
+                });
+                document.querySelectorAll('.lang-option').forEach(opt => {
+                    opt.addEventListener('click', (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        this.setLanguage(opt.dataset.lang);
+                    });
+                });
+                document.querySelectorAll('.tutorial-text').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        if (this.tutorialActive) this.nextTutorialStep();
+                    });
+                });
+            }
+            
+            updateUITexts() {
+                document.getElementById('hammerBtn').title = I18N.t('hammerHint');
+                document.getElementById('hammerIndicator').textContent = I18N.t('hammerIndicator');
+                if (this.isGameOver) {
+                    document.getElementById('finalScore').textContent = `${I18N.t('finalScore')} ${this.score}`;
+                    document.getElementById('finalLoops').textContent = `${I18N.t('finalLoops')} ${this.loops}`;
+                }
+            }
+            
+            setLanguage(lang) {
+                if (I18N.setLanguage(lang)) {
+                    this.updateUITexts();
+                    this.updateScore();
+                }
             }
             
             canProcessClick() {
                 const now = Date.now();
-                if (now - this.lastClickTime < this.clickDelay) {
-                    return false;
-                }
-                if (this.isProcessingClick) {
-                    return false;
-                }
+                if (now - this.lastClickTime < this.clickDelay || this.isProcessingClick) return false;
                 this.lastClickTime = now;
                 return true;
             }
             
             init() {
-                // Пытаемся загрузить сохранённую игру
                 if (!this.loadGame()) {
                     this.updateScore();
                     this.setupGrid();
@@ -1363,141 +1468,76 @@
             }
             
             setupAutoSave() {
-                // Автосохранение каждые 10 секунд
                 setInterval(() => {
-                    if (!this.isGameOver && !this.tutorialActive) {
-                        this.saveGame();
-                    }
+                    if (!this.isGameOver && !this.tutorialActive) this.saveGame();
                 }, 10000);
-                
-                // Сохранение при закрытии страницы
                 window.addEventListener('beforeunload', () => {
-                    if (!this.isGameOver && !this.tutorialActive) {
-                        this.saveGame();
-                    }
+                    if (!this.isGameOver && !this.tutorialActive) this.saveGame();
                 });
             }
             
             saveGame() {
                 const saveData = {
-                    version: 1,
-                    score: this.score,
-                    loops: this.loops,
-                    combo: this.combo,
-                    maxCombo: this.maxCombo,
-                    difficultyLevel: this.difficultyLevel,
-                    hammerUsed: this.hammerUsed,
-                    hammerAvailable: this.hammerAvailable,
+                    version: 1, score: this.score, loops: this.loops, combo: this.combo,
+                    maxCombo: this.maxCombo, difficultyLevel: this.difficultyLevel,
+                    hammerUsed: this.hammerUsed, hammerAvailable: this.hammerAvailable,
                     nextHammerAt: this.nextHammerAt,
-                    grid: this.grid.map(row => row.map(block => {
-                        if (!block) return null;
-                        return {
-                            type: block.type,
-                            variant: block.variant,
-                            rotation: block.rotation
-                        };
-                    })),
-                    previewBlocks: this.previewBlocks.map(block => {
-                        if (!block) return null;
-                        return {
-                            type: block.type,
-                            variant: block.variant,
-                            rotation: block.rotation
-                        };
-                    }),
+                    grid: this.grid.map(row => row.map(block => block ? {
+                        type: block.type, variant: block.variant, rotation: block.rotation
+                    } : null)),
+                    previewBlocks: this.previewBlocks.map(block => block ? {
+                        type: block.type, variant: block.variant, rotation: block.rotation
+                    } : null),
                     selectedSlot: this.selectedSlot
                 };
-                
                 localStorage.setItem('loopixSave', JSON.stringify(saveData));
             }
             
             loadGame() {
                 const saved = localStorage.getItem('loopixSave');
                 if (!saved) return false;
-                
                 try {
-                    const saveData = JSON.parse(saved);
-                    
-                    this.score = saveData.score;
-                    this.displayScore = saveData.score;
-                    this.loops = saveData.loops;
-                    this.combo = saveData.combo;
-                    this.maxCombo = saveData.maxCombo;
-                    this.difficultyLevel = saveData.difficultyLevel;
-                    this.hammerUsed = saveData.hammerUsed;
-                    this.hammerAvailable = saveData.hammerAvailable;
-                    this.nextHammerAt = saveData.nextHammerAt;
-                    
-                    // Восстанавливаем сетку
-                    this.grid = saveData.grid.map(row => row.map(blockData => {
+                    const data = JSON.parse(saved);
+                    this.score = data.score; this.displayScore = data.score;
+                    this.loops = data.loops; this.combo = data.combo;
+                    this.maxCombo = data.maxCombo; this.difficultyLevel = data.difficultyLevel;
+                    this.hammerUsed = data.hammerUsed; this.hammerAvailable = data.hammerAvailable;
+                    this.nextHammerAt = data.nextHammerAt;
+                    this.grid = data.grid.map(row => row.map(blockData => {
                         if (!blockData) return null;
                         const block = new Block(blockData.type, blockData.variant);
-                        for (let r = 0; r < blockData.rotation / 90; r++) {
-                            block.rotate();
-                        }
+                        for (let r = 0; r < blockData.rotation / 90; r++) block.rotate();
                         return block;
                     }));
-                    
-                    // Восстанавливаем превью блоки
-                    this.previewBlocks = saveData.previewBlocks.map(blockData => {
+                    this.previewBlocks = data.previewBlocks.map(blockData => {
                         if (!blockData) return null;
                         const block = new Block(blockData.type, blockData.variant);
-                        for (let r = 0; r < blockData.rotation / 90; r++) {
-                            block.rotate();
-                        }
+                        for (let r = 0; r < blockData.rotation / 90; r++) block.rotate();
                         return block;
                     });
-                    
-                    this.selectedSlot = saveData.selectedSlot;
-                    
+                    this.selectedSlot = data.selectedSlot;
                     this.updateSlotClasses();
                     this.renderPreviews();
                     this.updateScore();
                     this.findLongestChain();
-                    
-                    // Обновляем UI молотка
-                    if (this.hammerUsed) {
-                        document.getElementById('hammerBtn').classList.add('disabled');
-                    } else {
-                        document.getElementById('hammerBtn').classList.remove('disabled');
-                    }
-                    
+                    document.getElementById('hammerBtn').classList.toggle('disabled', this.hammerUsed);
                     this.setupEvents();
                     return true;
-                } catch (e) {
-                    console.log('Failed to load save:', e);
-                    return false;
-                }
+                } catch (e) { return false; }
             }
             
             startBackgroundAnimation() {
                 setInterval(() => {
-                    this.bgHue += 0.5 * this.bgDirection;
-                    
-                    if (this.bgHue >= 280) {
-                        this.bgHue = 280;
-                        this.bgDirection = -1;
-                    } else if (this.bgHue <= 160) {
-                        this.bgHue = 160;
-                        this.bgDirection = 1;
-                    }
-                    
-                    const hue1 = this.bgHue;
-                    const hue2 = Math.min(hue1 + 30, 300);
-                    document.body.style.background = `linear-gradient(180deg, hsl(${hue1}, 60%, 12%) 0%, hsl(${hue2}, 55%, 18%) 100%)`;
+                    this.bgHue = (this.bgHue + 0.5) % 360;
+                    document.body.style.background = `linear-gradient(180deg, hsl(${this.bgHue}, 60%, 12%) 0%, hsl(${(this.bgHue + 30) % 360}, 55%, 18%) 100%)`;
                 }, 100);
             }
             
             updateDifficultyByScore() {
-                if (this.score >= 5000) {
-                    this.difficultyLevel = 3;
-                } else if (this.score >= 2000) {
-                    this.difficultyLevel = 2;
-                } else if (this.score >= 500) {
-                    this.difficultyLevel = 1;
-                } else {
-                    this.difficultyLevel = 0;
-                }
+                if (this.score >= 5000) this.difficultyLevel = 3;
+                else if (this.score >= 2000) this.difficultyLevel = 2;
+                else if (this.score >= 500) this.difficultyLevel = 1;
+                else this.difficultyLevel = 0;
             }
             
             checkHammerAvailability() {
@@ -1506,34 +1546,18 @@
                     this.hammerAvailable = true;
                     this.nextHammerAt = Math.floor(this.score / 2000) * 2000 + 2000;
                     document.getElementById('hammerBtn').classList.remove('disabled');
-                    
-                    const hammerBtn = document.getElementById('hammerBtn');
-                    hammerBtn.style.transform = 'scale(1.2)';
-                    setTimeout(() => hammerBtn.style.transform = '', 200);
                 }
             }
             
-            toggleSound() {
-                audioManager.toggle();
-            }
+            toggleSound() { audioManager.toggle(); }
+            setVolume(v) { audioManager.setVolume(v); }
+            toggleVibration() { vibrationManager.toggle(); }
             
-            setVolume(value) {
-                audioManager.setVolume(value);
-            }
-            
-            toggleVibration() {
-                vibrationManager.toggle();
-            }
-            
-            addScreenShake(intensity) {
-                this.shakeIntensity = Math.min(intensity, 15);
-            }
+            addScreenShake(intensity) { this.shakeIntensity = Math.min(intensity, 15); }
             
             updateScreenShake() {
                 if (this.shakeIntensity > 0.5) {
-                    const shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2;
-                    const shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2;
-                    this.gameContainer.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+                    this.gameContainer.style.transform = `translate(${(Math.random() - 0.5) * this.shakeIntensity * 2}px, ${(Math.random() - 0.5) * this.shakeIntensity * 2}px)`;
                     this.shakeIntensity *= this.shakeDecay;
                 } else {
                     this.shakeIntensity = 0;
@@ -1541,19 +1565,13 @@
                 }
             }
             
-            addBlockScaleEffect(x, y) {
-                const key = `${x},${y}`;
-                this.blockScaleAnimations.set(key, 1.3);
-            }
+            addBlockScaleEffect(x, y) { this.blockScaleAnimations.set(`${x},${y}`, 1.3); }
             
             updateBlockScaleAnimations() {
                 for (const [key, scale] of this.blockScaleAnimations) {
                     const newScale = scale * 0.85;
-                    if (newScale > 1.05) {
-                        this.blockScaleAnimations.set(key, newScale);
-                    } else {
-                        this.blockScaleAnimations.delete(key);
-                    }
+                    if (newScale > 1.05) this.blockScaleAnimations.set(key, newScale);
+                    else this.blockScaleAnimations.delete(key);
                 }
             }
             
@@ -1561,7 +1579,6 @@
                 this.slowMotionActive = true;
                 this.timeScale = timeScale;
                 this.canvas.classList.add('slow-motion-active');
-                
                 setTimeout(() => {
                     this.slowMotionActive = false;
                     this.timeScale = 1;
@@ -1571,55 +1588,31 @@
             
             activateDarkOverlay(duration = 1000) {
                 this.darkOverlay.classList.add('active');
-                setTimeout(() => {
-                    this.darkOverlay.classList.remove('active');
-                }, duration);
+                setTimeout(() => this.darkOverlay.classList.remove('active'), duration);
             }
             
             animateScore(targetScore) {
-                if (this.scoreAnimationFrame) {
-                    cancelAnimationFrame(this.scoreAnimationFrame);
-                }
-                
+                if (this.scoreAnimationFrame) cancelAnimationFrame(this.scoreAnimationFrame);
                 const startScore = this.displayScore;
                 const diff = targetScore - startScore;
-                const duration = 500;
                 const startTime = performance.now();
-                
                 const scoreElement = document.getElementById('score');
                 scoreElement.classList.add('animate');
                 setTimeout(() => scoreElement.classList.remove('animate'), 300);
                 
                 const animate = (currentTime) => {
-                    const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    
-                    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-                    this.displayScore = Math.floor(startScore + diff * easeOutQuart);
-                    
+                    const progress = Math.min((currentTime - startTime) / 500, 1);
+                    this.displayScore = Math.floor(startScore + diff * (1 - Math.pow(1 - progress, 4)));
                     document.getElementById('score').textContent = this.displayScore;
-                    
-                    if (progress < 1) {
-                        this.scoreAnimationFrame = requestAnimationFrame(animate);
-                    } else {
-                        this.displayScore = targetScore;
-                        document.getElementById('score').textContent = targetScore;
-                        this.scoreAnimationFrame = null;
-                    }
+                    if (progress < 1) this.scoreAnimationFrame = requestAnimationFrame(animate);
+                    else { this.displayScore = targetScore; document.getElementById('score').textContent = targetScore; }
                 };
-                
                 this.scoreAnimationFrame = requestAnimationFrame(animate);
             }
             
             checkTutorial() {
-                const hasSeenTutorial = localStorage.getItem('loopixTutorial');
-                if (!hasSeenTutorial) {
-                    this.startTutorial();
-                } else {
-                    this.placeInitialBlocks();
-                    this.generateNewSet();
-                    this.setupEvents();
-                }
+                if (!localStorage.getItem('loopixTutorial')) this.startTutorial();
+                else { this.placeInitialBlocks(); this.generateNewSet(); this.setupEvents(); }
             }
             
             startTutorial() {
@@ -1634,43 +1627,26 @@
             setupTutorialField() {
                 this.difficultyLevel = 0;
                 this.setupGrid();
-                
-                const corner1 = new Block('CORNER', 1);
-                this.grid[2][2] = corner1;
-                
-                const corner2 = new Block('CORNER', 2);
-                this.grid[2][3] = corner2;
-                
-                const corner3 = new Block('CORNER', 3);
-                this.grid[3][3] = corner3;
-                
-                const tutorialBlock = new Block('CORNER', 1);
-                this.previewBlocks[0] = tutorialBlock;
+                this.grid[2][2] = new Block('CORNER', 1);
+                this.grid[2][3] = new Block('CORNER', 2);
+                this.grid[3][3] = new Block('CORNER', 3);
+                this.previewBlocks[0] = new Block('CORNER', 1);
                 this.previewBlocks[1] = null;
                 this.previewBlocks[2] = null;
-                
                 this.selectedSlot = null;
                 this.updateSlotClasses();
-                
-                requestAnimationFrame(() => {
-                    this.renderPreviews();
-                    setTimeout(() => this.renderPreviews(), 50);
-                });
+                requestAnimationFrame(() => { this.renderPreviews(); });
             }
             
             updateTutorialStep() {
                 document.querySelectorAll('.tutorial-step').forEach(el => el.classList.remove('active'));
                 document.getElementById('step' + this.tutorialStep).classList.add('active');
-                
                 const panel = document.getElementById('previewPanel');
                 const canvas = document.getElementById('mainCanvas');
                 const slots = document.querySelectorAll('.preview-slot');
                 const target = document.getElementById('tutorialTarget');
                 
-                slots.forEach(slot => {
-                    slot.classList.remove('tutorial-active', 'disabled');
-                    slot.style.pointerEvents = 'none';
-                });
+                slots.forEach(slot => { slot.classList.remove('tutorial-active', 'disabled'); slot.style.pointerEvents = 'none'; });
                 canvas.classList.remove('canvas-tutorial');
                 canvas.style.pointerEvents = 'none';
                 target.style.display = 'none';
@@ -1681,53 +1657,39 @@
                     step1.style.top = rect.top - 70 + 'px';
                     step1.style.left = '50%';
                     step1.style.transform = 'translateX(-50%)';
-                    
-                    const slot0 = document.getElementById('slot0');
-                    slot0.classList.add('tutorial-active');
-                    slot0.style.pointerEvents = 'auto';
+                    document.getElementById('slot0').classList.add('tutorial-active');
+                    document.getElementById('slot0').style.pointerEvents = 'auto';
                 } else if (this.tutorialStep === 2) {
                     const step2 = document.getElementById('step2');
-                    const slot0 = document.getElementById('slot0');
-                    const rect = slot0.getBoundingClientRect();
+                    const rect = document.getElementById('slot0').getBoundingClientRect();
                     step2.style.top = rect.top - 70 + 'px';
                     step2.style.left = '50%';
                     step2.style.transform = 'translateX(-50%)';
-                    
-                    slots.forEach((slot, index) => {
-                        if (index !== 0) slot.classList.add('disabled');
-                    });
-                    slot0.classList.add('tutorial-active');
-                    slot0.classList.add('selected');
+                    slots.forEach((s, i) => { if (i !== 0) s.classList.add('disabled'); });
+                    const slot0 = document.getElementById('slot0');
+                    slot0.classList.add('tutorial-active', 'selected');
                     slot0.style.pointerEvents = 'auto';
                 } else if (this.tutorialStep === 3) {
                     const step3 = document.getElementById('step3');
                     const canvasRect = canvas.getBoundingClientRect();
-                    
                     step3.style.top = (canvasRect.top + 10) + 'px';
                     step3.style.left = '50%';
                     step3.style.transform = 'translateX(-50%)';
-                    
-                    slots.forEach(slot => slot.classList.add('disabled'));
+                    slots.forEach(s => s.classList.add('disabled'));
                     canvas.classList.add('canvas-tutorial');
                     canvas.style.pointerEvents = 'auto';
-                    
-                    const targetX = 2;
-                    const targetY = 3;
                     target.style.width = this.cellSize + 'px';
                     target.style.height = this.cellSize + 'px';
-                    target.style.left = (canvasRect.left + targetX * this.cellSize) + 'px';
-                    target.style.top = (canvasRect.top + targetY * this.cellSize) + 'px';
+                    target.style.left = (canvasRect.left + 2 * this.cellSize) + 'px';
+                    target.style.top = (canvasRect.top + 3 * this.cellSize) + 'px';
                     target.style.display = 'block';
                 }
             }
             
             nextTutorialStep() {
                 this.tutorialStep++;
-                if (this.tutorialStep > 3) {
-                    this.endTutorial();
-                } else {
-                    this.updateTutorialStep();
-                }
+                if (this.tutorialStep > 3) this.endTutorial();
+                else this.updateTutorialStep();
             }
             
             endTutorial() {
@@ -1735,34 +1697,26 @@
                 document.getElementById('tutorialOverlay').classList.remove('show');
                 document.getElementById('tutorialTarget').style.display = 'none';
                 localStorage.setItem('loopixTutorial', 'true');
-                
-                const slots = document.querySelectorAll('.preview-slot');
-                const canvas = document.getElementById('mainCanvas');
-                
-                slots.forEach(slot => {
-                    slot.classList.remove('tutorial-active', 'disabled');
-                    slot.style.pointerEvents = '';
+                document.querySelectorAll('.preview-slot').forEach(s => {
+                    s.classList.remove('tutorial-active', 'disabled');
+                    s.style.pointerEvents = '';
                 });
+                const canvas = document.getElementById('mainCanvas');
                 canvas.classList.remove('canvas-tutorial');
                 canvas.style.pointerEvents = '';
-                
                 this.difficultyLevel = 0;
                 this.setupGrid();
                 this.placeInitialBlocks();
                 this.generateNewSet();
             }
             
-            skipTutorial() {
-                this.endTutorial();
-            }
+            skipTutorial() { this.endTutorial(); }
             
             placeInitialBlocks() {
                 const innerPositions = [];
-                for (let y = 1; y < this.gridSize - 1; y++) {
-                    for (let x = 1; x < this.gridSize - 1; x++) {
+                for (let y = 1; y < this.gridSize - 1; y++)
+                    for (let x = 1; x < this.gridSize - 1; x++)
                         innerPositions.push({x, y});
-                    }
-                }
                 for (let i = innerPositions.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [innerPositions[i], innerPositions[j]] = [innerPositions[j], innerPositions[i]];
@@ -1771,8 +1725,7 @@
                 for (let i = 0; i < numInitial && i < innerPositions.length; i++) {
                     const pos = innerPositions[i];
                     const block = this.randomBlock();
-                    const rotations = Math.floor(Math.random() * 4);
-                    for (let r = 0; r < rotations; r++) block.rotate();
+                    for (let r = 0; r < Math.floor(Math.random() * 4); r++) block.rotate();
                     this.grid[pos.y][pos.x] = block;
                 }
                 this.findLongestChain();
@@ -1780,17 +1733,13 @@
             
             openSettings() { 
                 if (!this.canProcessClick()) return;
-                document.getElementById('settingsModal').classList.add('show'); 
+                document.getElementById('settingsModal').classList.add('show');
+                I18N.updateUI();
             }
             closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
             
             setupGrid() {
-                this.grid = [];
-                for (let y = 0; y < this.gridSize; y++) {
-                    const row = [];
-                    for (let x = 0; x < this.gridSize; x++) row.push(null);
-                    this.grid.push(row);
-                }
+                this.grid = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(null));
             }
             
             generateNewSet() {
@@ -1798,350 +1747,231 @@
                 this.selectedSlot = null;
                 this.updateSlotClasses();
                 this.renderPreviews();
-                if (!this.canPlaceAny()) {
-                    this.checkGameOver();
-                }
+                if (!this.canPlaceAny()) this.checkGameOver();
             }
             
             checkGameOver() {
                 if (this.canPlaceAny()) return;
+                this.isGameOver = true;
                 
                 if (this.hammerAvailable && !this.hammerUsed) {
-                    this.isRescueMode = true;
                     document.getElementById('rescueModal').classList.add('show');
+                    I18N.updateUI();
                 } else {
-                    this.gameOver();
+                    this.showGameOver();
+                }
+            }
+            
+            showGameOver() {
+                document.getElementById('finalScore').textContent = `${I18N.t('finalScore')} ${this.score}`;
+                document.getElementById('finalLoops').textContent = `${I18N.t('finalLoops')} ${this.loops}`;
+                localStorage.removeItem('loopixSave');
+                
+                if (this.isNewRecord) {
+                    this.generateShareImage();
+                    document.getElementById('shareModal').classList.add('show');
+                    I18N.updateUI();
+                    this.isNewRecord = false;
+                } else {
+                    document.getElementById('gameOverModal').classList.add('show');
                 }
             }
             
             useRescueHammer() {
                 document.getElementById('rescueModal').classList.remove('show');
-                this.isRescueMode = false;
+                this.isGameOver = false;
                 this.useHammer();
             }
             
             declineRescue() {
                 document.getElementById('rescueModal').classList.remove('show');
-                this.isRescueMode = false;
-                this.newGame();
+                this.showGameOver();
             }
             
             updateSlotClasses() {
                 for (let i = 0; i < 3; i++) {
                     const slot = document.getElementById(`slot${i}`);
                     slot.classList.remove('selected', 'has-block', 'empty', 'dragging');
-                    if (this.previewBlocks[i] === null) slot.classList.add('empty');
+                    if (!this.previewBlocks[i]) slot.classList.add('empty');
                     else {
                         slot.classList.add('has-block');
                         if (this.selectedSlot === i) slot.classList.add('selected');
-                    }
-                    if (this.dragActive && this.dragSlot === i) {
-                        slot.classList.add('dragging');
                     }
                 }
             }
             
             randomBlock() {
                 const baseWeight = 100;
-                let weights = {
-                    'STRAIGHT': baseWeight,
-                    'CORNER': baseWeight,
-                    'T_SHAPE': 0,
-                    'CROSS': 0
-                };
+                let weights = { 'STRAIGHT': baseWeight, 'CORNER': baseWeight, 'T_SHAPE': 0, 'CROSS': 0 };
+                if (this.difficultyLevel >= 1) weights['T_SHAPE'] = baseWeight / 2;
+                if (this.difficultyLevel >= 2) { weights['T_SHAPE'] = baseWeight; weights['CROSS'] = baseWeight / 4; }
+                if (this.difficultyLevel >= 3) weights['CROSS'] = baseWeight / 4;
                 
-                if (this.difficultyLevel >= 1) {
-                    weights['T_SHAPE'] = baseWeight / 2;
-                }
-                if (this.difficultyLevel >= 2) {
-                    weights['T_SHAPE'] = baseWeight;
-                    weights['CROSS'] = baseWeight / 4; // Фиксированный шанс 1/4
-                }
-                if (this.difficultyLevel >= 3) {
-                    // CROSS остаётся 1/4, не повышается до 1/2
-                    weights['CROSS'] = baseWeight / 4;
-                }
-                
-                let totalWeight = 0;
-                for (const type in weights) {
-                    totalWeight += weights[type];
-                }
-                
+                const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
                 let random = Math.random() * totalWeight;
                 
                 for (const type in weights) {
                     if (weights[type] === 0) continue;
                     random -= weights[type];
                     if (random <= 0) {
-                        let variant = 0;
-                        if (BLOCK_TYPES[type].variants) {
-                            variant = Math.floor(Math.random() * BLOCK_TYPES[type].variants.length);
-                        }
+                        const variant = BLOCK_TYPES[type].variants ? 
+                            Math.floor(Math.random() * BLOCK_TYPES[type].variants.length) : 0;
                         return new Block(type, variant);
                     }
                 }
-                
                 return new Block('STRAIGHT', 0);
             }
             
             setupEvents() {
                 for (let i = 0; i < 3; i++) {
                     const slot = document.getElementById(`slot${i}`);
-                    slot.replaceWith(slot.cloneNode(true));
-                    const freshSlot = document.getElementById(`slot${i}`);
-                    
-                    freshSlot.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        this.startDrag(i, e.clientX, e.clientY);
-                    });
-                    
-                    window.addEventListener('mousemove', (e) => {
-                        if (this.dragActive) {
-                            e.preventDefault();
-                            this.updateDrag(e.clientX, e.clientY);
-                        }
-                    });
-                    
-                    window.addEventListener('mouseup', (e) => {
-                        if (this.dragActive) {
-                            e.preventDefault();
-                            this.endDrag();
-                        }
-                    });
-                    
-                    freshSlot.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        const touch = e.touches[0];
-                        this.startDrag(i, touch.clientX, touch.clientY);
-                    }, { passive: false });
-                    
-                    freshSlot.addEventListener('touchmove', (e) => {
-                        if (this.dragActive) {
-                            e.preventDefault();
-                            const touch = e.touches[0];
-                            this.updateDrag(touch.clientX, touch.clientY);
-                        }
-                    }, { passive: false });
-                    
-                    freshSlot.addEventListener('touchend', (e) => {
-                        if (this.dragActive) {
-                            e.preventDefault();
-                            this.endDrag();
-                        }
-                    }, { passive: false });
-                    
-                    freshSlot.addEventListener('touchcancel', (e) => {
-                        if (this.dragActive) {
-                            e.preventDefault();
-                            this.endDrag();
-                        }
-                    }, { passive: false });
+                    const startDrag = (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        const c = e.touches ? e.touches[0] : e;
+                        this.startDrag(i, c.clientX, c.clientY);
+                    };
+                    slot.addEventListener('mousedown', startDrag);
+                    slot.addEventListener('touchstart', startDrag, { passive: false });
                 }
                 
+                const onMove = (e) => {
+                    if (!this.dragActive) return;
+                    e.preventDefault();
+                    const c = e.touches ? e.touches[0] : e;
+                    this.updateDrag(c.clientX, c.clientY);
+                };
+                const onEnd = (e) => { if (this.dragActive) { e.preventDefault(); this.endDrag(); } };
+                
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('touchmove', onMove, { passive: false });
+                window.addEventListener('mouseup', onEnd);
+                window.addEventListener('touchend', onEnd);
+                window.addEventListener('touchcancel', onEnd);
+                
                 this.canvas.addEventListener('pointermove', (e) => {
-                    e.preventDefault();
-                    this.onCanvasMove(e);
+                    e.preventDefault(); e.stopPropagation(); this.onCanvasMove(e);
                 }, { passive: false });
-                
                 this.canvas.addEventListener('pointerleave', () => this.onCanvasLeave());
-                
                 this.canvas.addEventListener('pointerdown', (e) => {
-                    e.preventDefault();
-                    this.onCanvasClick(e);
+                    e.preventDefault(); e.stopPropagation(); this.onCanvasClick(e);
                 }, { passive: false });
             }
             
-            startDrag(slotIndex, clientX, clientY) {
-                if (this.isGameOver) return;
-                if (this.previewBlocks[slotIndex] === null) return;
-                
+            startDrag(idx, cx, cy) {
+                if (this.isGameOver || !this.previewBlocks[idx]) return;
                 this.dragActive = true;
-                this.dragSlot = slotIndex;
-                this.dragStartSlot = slotIndex;
-                this.dragStartX = clientX;
-                this.dragStartY = clientY;
+                this.dragSlot = idx;
+                this.dragStartSlot = idx;
+                this.dragStartX = cx;
+                this.dragStartY = cy;
                 this.dragRotated = false;
-                
                 this.updateSlotClasses();
                 this.renderPreviews();
             }
             
-            updateDrag(clientX, clientY) {
-                if (!this.dragActive) return;
-                if (this.dragRotated) return;
-                
-                const deltaX = clientX - this.dragStartX;
-                const deltaY = clientY - this.dragStartY;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                
-                if (distance >= this.dragThreshold) {
-                    if (this.tutorialActive && this.tutorialStep === 2 && this.dragSlot === 0) {
-                        const block = this.previewBlocks[0];
-                        if (block.connectors[0] === 1 && block.connectors[1] === 1 && 
-                            block.connectors[2] === 0 && block.connectors[3] === 0) {
-                            this.dragRotated = true;
-                            return;
-                        }
-                    }
-                    
+            updateDrag(cx, cy) {
+                if (!this.dragActive || this.dragRotated) return;
+                if (Math.hypot(cx - this.dragStartX, cy - this.dragStartY) >= this.dragThreshold) {
                     this.previewBlocks[this.dragSlot].rotate();
                     audioManager.playRotate();
                     vibrationManager.lightVibration();
                     this.renderPreviews();
                     this.dragRotated = true;
-                    
                     if (this.tutorialActive && this.tutorialStep === 2 && this.dragSlot === 0) {
-                        const block = this.previewBlocks[0];
-                        if (block.connectors[0] === 1 && block.connectors[1] === 1 && 
-                            block.connectors[2] === 0 && block.connectors[3] === 0) {
+                        const b = this.previewBlocks[0];
+                        if (b.connectors[0] === 1 && b.connectors[1] === 1 && b.connectors[2] === 0 && b.connectors[3] === 0)
                             this.nextTutorialStep();
-                        }
                     }
                 }
             }
             
             endDrag() {
                 if (!this.dragActive) return;
-                
-                const slotIndex = this.dragStartSlot;
+                const slotIdx = this.dragStartSlot;
                 const wasDrag = this.dragRotated;
-                
                 this.dragActive = false;
                 this.dragSlot = -1;
-                
-                if (wasDrag) {
-                    this.selectedSlot = slotIndex;
-                    this.updateSlotClasses();
-                } else {
-                    this.handleSlotClick(slotIndex);
-                }
-                
+                if (wasDrag) { this.selectedSlot = slotIdx; this.updateSlotClasses(); }
+                else this.handleSlotClick(slotIdx);
                 this.dragStartSlot = -1;
                 this.dragRotated = false;
                 this.updateSlotClasses();
             }
             
-            handleSlotClick(slotIndex) {
-                if (!this.canProcessClick()) return;
-                if (this.isGameOver) return;
-                if (this.previewBlocks[slotIndex] === null) return;
-                
+            handleSlotClick(idx) {
+                if (!this.canProcessClick() || this.isGameOver || !this.previewBlocks[idx]) return;
                 this.isProcessingClick = true;
                 
                 if (this.tutorialActive) {
-                    if (this.tutorialStep === 1 && slotIndex === 0) {
-                        this.selectedSlot = slotIndex;
+                    if (this.tutorialStep === 1 && idx === 0) {
+                        this.selectedSlot = idx;
                         this.updateSlotClasses();
                         this.renderPreviews();
                         this.nextTutorialStep();
-                        this.isProcessingClick = false;
-                        return;
                     }
                     this.isProcessingClick = false;
                     return;
                 }
                 
-                if (this.selectedSlot === slotIndex) {
-                    this.previewBlocks[slotIndex].rotate();
+                if (this.selectedSlot === idx) {
+                    this.previewBlocks[idx].rotate();
                     audioManager.playRotate();
                     vibrationManager.lightVibration();
-                } else {
-                    this.selectedSlot = slotIndex;
-                }
+                } else this.selectedSlot = idx;
                 
                 this.updateSlotClasses();
                 this.renderPreviews();
-                
-                setTimeout(() => {
-                    this.isProcessingClick = false;
-                }, 50);
+                setTimeout(() => this.isProcessingClick = false, 50);
             }
             
             onCanvasMove(e) {
                 if (this.isGameOver) return;
-                
                 const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const gridX = Math.floor(x / this.cellSize);
-                const gridY = Math.floor(y / this.cellSize);
-                
-                if (gridX >= 0 && gridX < this.gridSize && gridY >= 0 && gridY < this.gridSize) {
-                    this.hoverCell = { x: gridX, y: gridY };
-                    
-                    if (this.hammerMode && this.grid[gridY][gridX]) {
-                        this.canvas.classList.add('hammer-target');
-                    } else {
-                        this.canvas.classList.remove('hammer-target');
-                    }
-                } else {
-                    this.hoverCell = { x: -1, y: -1 };
-                    this.canvas.classList.remove('hammer-target');
-                }
+                const gx = Math.floor((e.clientX - rect.left) / this.cellSize);
+                const gy = Math.floor((e.clientY - rect.top) / this.cellSize);
+                this.hoverCell = (gx >= 0 && gx < this.gridSize && gy >= 0 && gy < this.gridSize) ? {x: gx, y: gy} : {x: -1, y: -1};
+                this.canvas.classList.toggle('hammer-target', this.hammerMode && this.grid[gy]?.[gx]);
             }
             
-            onCanvasLeave() { 
-                this.hoverCell = { x: -1, y: -1 }; 
-                this.canvas.classList.remove('hammer-target');
-            }
+            onCanvasLeave() { this.hoverCell = {x: -1, y: -1}; this.canvas.classList.remove('hammer-target'); }
             
             onCanvasClick(e) {
-                if (!this.canProcessClick()) return;
-                if (this.isGameOver) return;
-                
+                if (!this.canProcessClick() || this.isGameOver) return;
                 const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const gridX = Math.floor(x / this.cellSize);
-                const gridY = Math.floor(y / this.cellSize);
+                const gx = Math.floor((e.clientX - rect.left) / this.cellSize);
+                const gy = Math.floor((e.clientY - rect.top) / this.cellSize);
                 
                 if (this.hammerMode) {
-                    if (gridX >= 0 && gridX < this.gridSize && gridY >= 0 && gridY < this.gridSize) {
-                        if (this.grid[gridY][gridX]) {
-                            this.removeBlock(gridX, gridY);
-                        }
-                    }
+                    if (this.grid[gy]?.[gx]) this.removeBlock(gx, gy);
                     return;
                 }
                 
                 if (this.selectedSlot === null) return;
-                
                 if (this.tutorialActive && this.tutorialStep === 3) {
-                    if (gridX === 2 && gridY === 3 && !this.grid[gridY][gridX]) {
-                        this.placeBlock(gridX, gridY, this.selectedSlot);
-                    }
+                    if (gx === 2 && gy === 3 && !this.grid[gy][gx]) this.placeBlock(gx, gy, this.selectedSlot);
                     return;
                 }
-                
-                if (gridX >= 0 && gridX < this.gridSize && gridY >= 0 && gridY < this.gridSize && !this.grid[gridY][gridX]) {
-                    this.placeBlock(gridX, gridY, this.selectedSlot);
-                }
+                if (gx >= 0 && gx < this.gridSize && gy >= 0 && gy < this.gridSize && !this.grid[gy][gx])
+                    this.placeBlock(gx, gy, this.selectedSlot);
             }
             
-            placeBlock(x, y, slotIndex) {
-                const block = this.previewBlocks[slotIndex];
+            placeBlock(x, y, slotIdx) {
+                const block = this.previewBlocks[slotIdx];
                 this.grid[y][x] = block;
-                this.previewBlocks[slotIndex] = null;
-                
+                this.previewBlocks[slotIdx] = null;
                 audioManager.playPlace(block.type);
                 this.addBlockScaleEffect(x, y);
-                
-                if (this.selectedSlot === slotIndex) {
-                    this.selectedSlot = null;
-                }
-                
+                if (this.selectedSlot === slotIdx) this.selectedSlot = null;
                 this.findLongestChain();
                 
                 if (this.tutorialActive && this.tutorialStep === 3) {
                     const loops = this.findLoops();
-                    if (loops.length > 0) {
+                    if (loops.length) {
                         this.combo = loops.length;
                         this.assignGlowColors(loops);
                         this.showComboPopup(loops);
                         this.clearLoops(loops);
-                        setTimeout(() => {
-                            this.nextTutorialStep();
-                        }, 1500);
+                        setTimeout(() => this.nextTutorialStep(), 1500);
                     }
                     this.updateSlotClasses();
                     this.renderPreviews();
@@ -2150,47 +1980,32 @@
                 }
                 
                 const loops = this.findLoops();
-                if (loops.length > 0) {
-                    const maxLoopSize = Math.max(...loops.map(loop => loop.size));
-                    this.combo = maxLoopSize;
-                    
+                if (loops.length) {
+                    const maxSize = Math.max(...loops.map(l => l.size));
+                    this.combo = maxSize;
                     if (this.combo > this.maxCombo) {
                         this.maxCombo = this.combo;
                         localStorage.setItem('loopixMaxCombo', this.maxCombo);
                     }
-                    
-                    const shakePower = Math.min(maxLoopSize * 2, 12);
-                    this.addScreenShake(shakePower);
-                    
-                    if (maxLoopSize >= 5) {
-                        const slowMoDuration = Math.min(maxLoopSize * 200, 2000);
-                        this.activateSlowMotion(slowMoDuration, 0.4);
-                        this.activateDarkOverlay(slowMoDuration * 0.4);
-                    } else {
-                        this.activateDarkOverlay(500);
-                    }
-                    
-                    audioManager.playCombo(maxLoopSize);
-                    vibrationManager.comboVibration(maxLoopSize);
-                    
+                    this.addScreenShake(Math.min(maxSize * 2, 12));
+                    if (maxSize >= 5) {
+                        this.activateSlowMotion(Math.min(maxSize * 200, 2000), 0.4);
+                        this.activateDarkOverlay(Math.min(maxSize * 200, 2000) * 0.4);
+                    } else this.activateDarkOverlay(500);
+                    audioManager.playCombo(maxSize);
+                    vibrationManager.comboVibration(maxSize);
                     this.assignGlowColors(loops);
                     this.showComboPopup(loops);
                     this.clearLoops(loops, loops.length);
-                    
                     this.updateDifficultyByScore();
-                    
                     setTimeout(() => this.findLongestChain(), 100);
                 } else {
                     this.combo = 1;
                     this.addScreenShake(2);
                 }
                 
-                const remaining = this.previewBlocks.filter(b => b !== null).length;
-                if (remaining === 0) {
-                    setTimeout(() => this.generateNewSet(), 400);
-                } else if (!this.canPlaceRemaining()) {
-                    this.checkGameOver();
-                }
+                if (this.previewBlocks.filter(b => b).length === 0) setTimeout(() => this.generateNewSet(), 400);
+                else if (!this.canPlaceRemaining()) this.checkGameOver();
                 
                 this.updateSlotClasses();
                 this.renderPreviews();
@@ -2199,45 +2014,30 @@
             
             findLongestChain() {
                 const visited = new Set();
-                let maxChain = null;
-                let maxLength = 0;
-                
+                let maxChain = null, maxLen = 0;
                 for (let y = 0; y < this.gridSize; y++) {
                     for (let x = 0; x < this.gridSize; x++) {
                         const key = `${x},${y}`;
                         if (!this.grid[y][x] || visited.has(key)) continue;
-                        
-                        const component = this.findConnectedComponent(x, y);
-                        for (const cellKey of component) visited.add(cellKey);
-                        
-                        if (!this.isClosedLoop(component) && component.size > maxLength) {
-                            maxLength = component.size;
-                            maxChain = component;
+                        const comp = this.findConnectedComponent(x, y);
+                        comp.forEach(k => visited.add(k));
+                        if (!this.isClosedLoop(comp) && comp.size > maxLen) {
+                            maxLen = comp.size;
+                            maxChain = comp;
                         }
                     }
                 }
-                
                 this.longestChain = maxChain;
-                this.longestChainLength = maxLength;
+                this.longestChainLength = maxLen;
             }
             
             useHammer() {
-                if (!this.canProcessClick()) return;
-                if (this.hammerUsed || this.isGameOver || this.tutorialActive) return;
-                
-                // Здесь будет вызов рекламы Яндекса
-                // YaGames.init().then(ysdk => {
-                //     ysdk.getAdv().showRewardedVideo().then(() => {
-                //         this.activateHammer();
-                //     });
-                // });
-                
-                // Заглушка
+                if (!this.canProcessClick() || this.hammerUsed || this.isGameOver || this.tutorialActive) return;
                 document.getElementById('adModal').classList.add('show');
+                I18N.updateUI();
                 let timer = 5;
                 const timerEl = document.getElementById('adTimer');
                 timerEl.textContent = timer;
-                
                 this.adInterval = setInterval(() => {
                     timer--;
                     timerEl.textContent = timer;
@@ -2250,10 +2050,7 @@
             }
             
             cancelAd() {
-                if (this.adInterval) {
-                    clearInterval(this.adInterval);
-                    this.adInterval = null;
-                }
+                if (this.adInterval) { clearInterval(this.adInterval); this.adInterval = null; }
                 document.getElementById('adModal').classList.remove('show');
             }
             
@@ -2271,84 +2068,50 @@
             removeBlock(x, y) {
                 this.createExplosion(x, y, '#ffd54f');
                 this.grid[y][x] = null;
-                
                 audioManager.playClear();
-                
                 this.hammerMode = false;
-                this.canvas.classList.remove('hammer-mode');
-                this.canvas.classList.remove('hammer-target');
+                this.canvas.classList.remove('hammer-mode', 'hammer-target');
                 document.getElementById('hammerIndicator').classList.remove('show');
-                
                 this.addScreenShake(3);
                 this.findLongestChain();
-                
-                if (!this.canPlaceAny()) {
-                    this.checkGameOver();
-                }
+                if (!this.canPlaceAny()) this.checkGameOver();
             }
             
             showComboPopup(loops) {
                 const popup = document.getElementById('comboPopup');
                 const textEl = document.getElementById('comboText');
                 const countEl = document.getElementById('comboCount');
-                
-                const totalCells = loops.reduce((sum, loop) => sum + loop.size, 0);
-                const phrase = COMBO_PHRASES[Math.floor(Math.random() * COMBO_PHRASES.length)];
-                const color = COMBO_COLORS[Math.floor(Math.random() * COMBO_COLORS.length)];
-                
-                textEl.textContent = phrase;
-                textEl.style.color = color;
-                countEl.textContent = `КОМБО x${totalCells}`;
-                countEl.style.color = color;
-                
+                const total = loops.reduce((s, l) => s + l.size, 0);
+                const phrases = getComboPhrases();
+                textEl.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+                textEl.style.color = COMBO_COLORS[Math.floor(Math.random() * COMBO_COLORS.length)];
+                countEl.textContent = `${I18N.t('comboTimes')}${total}`;
+                countEl.style.color = textEl.style.color;
                 popup.classList.remove('hide');
                 popup.classList.add('show');
-                
-                setTimeout(() => {
-                    popup.classList.remove('show');
-                    popup.classList.add('hide');
-                }, 2000);
+                setTimeout(() => { popup.classList.remove('show'); popup.classList.add('hide'); }, 2000);
             }
             
-            canPlaceAny() {
-                for (let y = 0; y < this.gridSize; y++) {
-                    for (let x = 0; x < this.gridSize; x++) {
-                        if (!this.grid[y][x]) return true;
-                    }
-                }
-                return false;
-            }
+            canPlaceAny() { return this.grid.some(row => row.some(cell => !cell)); }
             
             canPlaceRemaining() {
-                let freeCells = 0;
-                for (let y = 0; y < this.gridSize; y++) {
-                    for (let x = 0; x < this.gridSize; x++) {
-                        if (!this.grid[y][x]) freeCells++;
-                    }
-                }
-                const remainingBlocks = this.previewBlocks.filter(b => b !== null).length;
-                return freeCells >= remainingBlocks;
+                const free = this.grid.reduce((s, row) => s + row.filter(c => !c).length, 0);
+                return free >= this.previewBlocks.filter(b => b).length;
             }
             
-            isClosedLoop(component) {
-                if (component.size < 2) return false;
-                for (const cellKey of component) {
-                    const [cx, cy] = cellKey.split(',').map(Number);
+            isClosedLoop(comp) {
+                if (comp.size < 2) return false;
+                for (const key of comp) {
+                    const [cx, cy] = key.split(',').map(Number);
                     const block = this.grid[cy][cx];
                     if (!block) continue;
-                    const directions = [
-                        {dx: 0, dy: -1, dir: 0, opposite: 2},
-                        {dx: 1, dy: 0, dir: 1, opposite: 3},
-                        {dx: 0, dy: 1, dir: 2, opposite: 0},
-                        {dx: -1, dy: 0, dir: 3, opposite: 1}
-                    ];
-                    for (const {dx, dy, dir, opposite} of directions) {
+                    const dirs = [[0, -1, 0, 2], [1, 0, 1, 3], [0, 1, 2, 0], [-1, 0, 3, 1]];
+                    for (const [dx, dy, dir, opp] of dirs) {
                         if (block.getConnector(dir)) {
-                            const nx = cx + dx, ny = cy + dy;
-                            const neighborKey = `${nx},${ny}`;
-                            if (!component.has(neighborKey)) return false;
-                            const neighbor = this.grid[ny][nx];
-                            if (!neighbor || !neighbor.getConnector(opposite)) return false;
+                            const nk = `${cx + dx},${cy + dy}`;
+                            if (!comp.has(nk)) return false;
+                            const nb = this.grid[cy + dy][cx + dx];
+                            if (!nb || !nb.getConnector(opp)) return false;
                         }
                     }
                 }
@@ -2356,125 +2119,87 @@
             }
             
             findLoops() {
-                const loops = [];
-                const processed = new Set();
+                const loops = [], processed = new Set();
                 for (let y = 0; y < this.gridSize; y++) {
                     for (let x = 0; x < this.gridSize; x++) {
                         const key = `${x},${y}`;
                         if (!this.grid[y][x] || processed.has(key)) continue;
-                        const component = this.findConnectedComponent(x, y);
-                        for (const cellKey of component) processed.add(cellKey);
-                        if (this.isClosedLoop(component)) loops.push(component);
+                        const comp = this.findConnectedComponent(x, y);
+                        comp.forEach(k => processed.add(k));
+                        if (this.isClosedLoop(comp)) loops.push(comp);
                     }
                 }
                 return loops;
             }
             
-            findConnectedComponent(startX, startY) {
-                const component = new Set();
-                const queue = [{x: startX, y: startY}];
-                const visited = new Set([`${startX},${startY}`]);
-                while (queue.length > 0) {
+            findConnectedComponent(sx, sy) {
+                const comp = new Set(), queue = [{x: sx, y: sy}], visited = new Set([`${sx},${sy}`]);
+                while (queue.length) {
                     const {x, y} = queue.shift();
                     const block = this.grid[y][x];
                     if (!block) continue;
-                    component.add(`${x},${y}`);
-                    const directions = [
-                        {dx: 0, dy: -1, dir: 0, opposite: 2},
-                        {dx: 1, dy: 0, dir: 1, opposite: 3},
-                        {dx: 0, dy: 1, dir: 2, opposite: 0},
-                        {dx: -1, dy: 0, dir: 3, opposite: 1}
-                    ];
-                    for (const {dx, dy, dir, opposite} of directions) {
+                    comp.add(`${x},${y}`);
+                    const dirs = [[0, -1, 0, 2], [1, 0, 1, 3], [0, 1, 2, 0], [-1, 0, 3, 1]];
+                    for (const [dx, dy, dir, opp] of dirs) {
                         if (!block.getConnector(dir)) continue;
                         const nx = x + dx, ny = y + dy;
                         if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) continue;
-                        const neighbor = this.grid[ny][nx];
-                        if (!neighbor) continue;
-                        if (!neighbor.getConnector(opposite)) continue;
-                        const nextKey = `${nx},${ny}`;
-                        if (visited.has(nextKey)) continue;
-                        visited.add(nextKey);
-                        queue.push({x: nx, y: ny});
+                        const nb = this.grid[ny][nx];
+                        if (!nb || !nb.getConnector(opp)) continue;
+                        const nk = `${nx},${ny}`;
+                        if (!visited.has(nk)) { visited.add(nk); queue.push({x: nx, y: ny}); }
                     }
                 }
-                return component;
+                return comp;
             }
             
             assignGlowColors(loops) {
                 this.chainGlowColors.clear();
                 const colors = COLORS.chainColors;
-                loops.forEach((loop, index) => {
+                loops.forEach((loop, i) => {
                     const size = loop.size;
-                    let palette;
-                    if (size <= 6) palette = colors.small;
-                    else if (size <= 10) palette = colors.medium;
-                    else if (size <= 15) palette = colors.large;
-                    else if (size <= 20) palette = colors.epic;
-                    else palette = colors.legendary;
-                    const colorIndex = index % palette.length;
-                    const glowColor = palette[colorIndex];
-                    loop.forEach(key => this.chainGlowColors.set(key, glowColor));
+                    const palette = size <= 6 ? colors.small : size <= 10 ? colors.medium : 
+                                   size <= 15 ? colors.large : size <= 20 ? colors.epic : colors.legendary;
+                    const color = palette[i % palette.length];
+                    loop.forEach(k => this.chainGlowColors.set(k, color));
                 });
             }
             
             clearLoops(loops, chainsCleared = 1) {
-                let totalCells = 0;
-                let totalPoints = 0;
+                let totalCells = 0, totalPoints = 0;
                 this.lastLoopCells.clear();
-                
                 loops.forEach(loop => {
                     totalCells += loop.size;
-                    
                     let loopPrice = 0;
-                    loop.forEach(key => {
-                        const [x, y] = key.split(',').map(Number);
-                        const block = this.grid[y][x];
-                        if (block) {
-                            loopPrice += block.price;
-                        }
+                    loop.forEach(k => {
+                        const [x, y] = k.split(',').map(Number);
+                        if (this.grid[y][x]) loopPrice += this.grid[y][x].price;
                     });
-                    
-                    const loopPoints = loopPrice * loop.size;
-                    totalPoints += loopPoints;
-                    
-                    loop.forEach(key => this.lastLoopCells.add(key));
-                    loop.forEach(key => {
-                        const [x, y] = key.split(',').map(Number);
-                        const glowColor = this.chainGlowColors.get(key) || '#4fc3f7';
-                        this.createExplosion(x, y, glowColor);
+                    const points = loopPrice * loop.size;
+                    totalPoints += points;
+                    loop.forEach(k => this.lastLoopCells.add(k));
+                    loop.forEach(k => {
+                        const [x, y] = k.split(',').map(Number);
+                        this.createExplosion(x, y, this.chainGlowColors.get(k) || '#4fc3f7');
                         this.grid[y][x] = null;
                     });
                 });
-                
                 this.score += totalPoints;
                 this.loops += chainsCleared;
                 this.animateScore(this.score);
                 this.updateScore();
                 this.checkHammerAvailability();
-                
-                setTimeout(() => {
-                    this.lastLoopCells.clear();
-                    this.chainGlowColors.clear();
-                }, 600);
+                setTimeout(() => { this.lastLoopCells.clear(); this.chainGlowColors.clear(); }, 600);
             }
             
-            createExplosion(gridX, gridY, color) {
-                const x = gridX * this.cellSize + this.cellSize / 2;
-                const y = gridY * this.cellSize + this.cellSize / 2;
-                const particleCount = 20;
-                for (let i = 0; i < particleCount; i++) {
-                    const angle = (Math.PI * 2 * i) / particleCount;
+            createExplosion(gx, gy, color) {
+                const x = gx * this.cellSize + this.cellSize / 2;
+                const y = gy * this.cellSize + this.cellSize / 2;
+                for (let i = 0; i < 20; i++) {
+                    const angle = (Math.PI * 2 * i) / 20;
                     const speed = 3 + Math.random() * 5;
-                    this.particles.push({
-                        x, y,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 1,
-                        color: color,
-                        size: 3 + Math.random() * 4,
-                        decay: 0.01 + Math.random() * 0.02
-                    });
+                    this.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        life: 1, color, size: 3 + Math.random() * 4, decay: 0.01 + Math.random() * 0.02 });
                 }
             }
             
@@ -2483,187 +2208,80 @@
                     const canvas = document.getElementById(`preview${i}`);
                     const ctx = canvas.getContext('2d');
                     ctx.clearRect(0, 0, 50, 50);
-                    if (this.previewBlocks[i] !== null) {
-                        this.drawBlock(ctx, this.previewBlocks[i], 0, 0, 50, false, true);
-                    }
+                    if (this.previewBlocks[i]) this.drawBlock(ctx, this.previewBlocks[i], 0, 0, 50, false, true);
                 }
             }
             
-            hasConnection(x, y, direction) {
+            hasConnection(x, y, dir) {
                 const block = this.grid[y]?.[x];
-                if (!block) return false;
-                if (!block.getConnector(direction)) return false;
-                const directions = [
-                    {dx: 0, dy: -1, opposite: 2},
-                    {dx: 1, dy: 0, opposite: 3},
-                    {dx: 0, dy: 1, opposite: 0},
-                    {dx: -1, dy: 0, opposite: 1}
-                ];
-                const dir = directions[direction];
-                const nx = x + dir.dx, ny = y + dir.dy;
+                if (!block || !block.getConnector(dir)) return false;
+                const dirs = [[0, -1, 2], [1, 0, 3], [0, 1, 0], [-1, 0, 1]];
+                const [dx, dy, opp] = dirs[dir];
+                const nx = x + dx, ny = y + dy;
                 if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) return false;
-                const neighbor = this.grid[ny][nx];
-                if (!neighbor) return false;
-                return neighbor.getConnector(dir.opposite);
+                const nb = this.grid[ny][nx];
+                return nb && nb.getConnector(opp);
             }
             
             getGlowColor(x, y) {
                 const key = `${x},${y}`;
-                if (this.lastLoopCells.has(key)) {
-                    return this.chainGlowColors.get(key) || '#fff';
-                }
-                return null;
+                return this.lastLoopCells.has(key) ? this.chainGlowColors.get(key) || '#fff' : null;
             }
             
             drawBlock(ctx, block, x, y, size, isHighlighted = false, isPreview = false, glowColor = null) {
-                const padding = 2;
-                const s = size - padding * 2;
-                const px = x + padding;
-                const py = y + padding;
-                const gridX = Math.floor(x / this.cellSize);
-                const gridY = Math.floor(y / this.cellSize);
+                const pad = 2, s = size - pad * 2, px = x + pad, py = y + pad;
+                const gx = Math.floor(x / this.cellSize), gy = Math.floor(y / this.cellSize);
                 
-                let scaleX = px + s/2;
-                let scaleY = py + s/2;
-                let currentScale = 1;
+                let scale = 1;
+                if (!isPreview && this.blockScaleAnimations.has(`${gx},${gy}`))
+                    scale = this.blockScaleAnimations.get(`${gx},${gy}`);
                 
-                if (!isPreview) {
-                    const key = `${gridX},${gridY}`;
-                    if (this.blockScaleAnimations.has(key)) {
-                        currentScale = this.blockScaleAnimations.get(key);
-                    }
-                }
-                
-                const connected = isPreview ? [false, false, false, false] : [
-                    this.hasConnection(gridX, gridY, 0),
-                    this.hasConnection(gridX, gridY, 1),
-                    this.hasConnection(gridX, gridY, 2),
-                    this.hasConnection(gridX, gridY, 3)
-                ];
-                
-                let hasFree = false;
-                if (!isPreview && this.grid[gridY][gridX]) {
-                    hasFree = this.hasFreeConnectors(gridX, gridY);
-                }
+                const connected = isPreview ? [false, false, false, false] : [0, 1, 2, 3].map(d => this.hasConnection(gx, gy, d));
+                const hasFree = !isPreview && this.grid[gy][gx] && this.hasFreeConnectors(gx, gy);
                 
                 ctx.save();
+                if (scale !== 1) { ctx.translate(px + s/2, py + s/2); ctx.scale(scale, scale); ctx.translate(-(px + s/2), -(py + s/2)); }
+                if (glowColor && !isPreview) { ctx.shadowColor = glowColor; ctx.shadowBlur = 20; }
                 
-                if (currentScale !== 1) {
-                    ctx.translate(scaleX, scaleY);
-                    ctx.scale(currentScale, currentScale);
-                    ctx.translate(-scaleX, -scaleY);
-                }
-                
-                if (glowColor && !isPreview) {
-                    ctx.shadowColor = glowColor;
-                    ctx.shadowBlur = 20;
-                } else {
-                    ctx.shadowBlur = 0;
-                }
-                
-                if (isHighlighted) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-                } else if (glowColor) {
-                    ctx.fillStyle = glowColor + '33';
-                } else if (hasFree) {
-                    ctx.fillStyle = 'rgba(255, 107, 157, 0.15)';
-                } else {
-                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                }
+                ctx.fillStyle = isHighlighted ? 'rgba(255,255,255,0.4)' : glowColor ? glowColor + '33' : hasFree ? 'rgba(255, 107, 157, 0.15)' : 'rgba(255,255,255,0.1)';
                 ctx.fillRect(px, py, s, s);
-                
                 ctx.strokeStyle = glowColor || (isHighlighted ? '#fff' : (hasFree ? '#ff6b9d' : block.color));
                 ctx.lineWidth = glowColor ? 3 : (isHighlighted ? 3 : 2);
                 ctx.lineCap = 'square';
                 ctx.shadowBlur = 0;
                 
-                if (!connected[0]) {
-                    ctx.beginPath();
-                    ctx.moveTo(px, py);
-                    ctx.lineTo(px + s, py);
-                    ctx.stroke();
-                }
-                if (!connected[1]) {
-                    ctx.beginPath();
-                    ctx.moveTo(px + s, py);
-                    ctx.lineTo(px + s, py + s);
-                    ctx.stroke();
-                }
-                if (!connected[2]) {
-                    ctx.beginPath();
-                    ctx.moveTo(px + s, py + s);
-                    ctx.lineTo(px, py + s);
-                    ctx.stroke();
-                }
-                if (!connected[3]) {
-                    ctx.beginPath();
-                    ctx.moveTo(px, py + s);
-                    ctx.lineTo(px, py);
-                    ctx.stroke();
-                }
+                if (!connected[0]) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + s, py); ctx.stroke(); }
+                if (!connected[1]) { ctx.beginPath(); ctx.moveTo(px + s, py); ctx.lineTo(px + s, py + s); ctx.stroke(); }
+                if (!connected[2]) { ctx.beginPath(); ctx.moveTo(px + s, py + s); ctx.lineTo(px, py + s); ctx.stroke(); }
+                if (!connected[3]) { ctx.beginPath(); ctx.moveTo(px, py + s); ctx.lineTo(px, py); ctx.stroke(); }
                 
                 ctx.strokeStyle = glowColor || (isHighlighted ? '#fff' : block.color);
                 ctx.lineWidth = glowColor ? 5 : (isHighlighted ? 5 : 4);
                 ctx.lineCap = 'round';
+                if (glowColor && !isPreview) { ctx.shadowColor = glowColor; ctx.shadowBlur = 10; }
                 
-                if (glowColor && !isPreview) {
-                    ctx.shadowColor = glowColor;
-                    ctx.shadowBlur = 10;
-                }
-                
-                const centerX = x + size / 2;
-                const centerY = y + size / 2;
-                const length = s / 2 - 2;
-                
-                if (block.getConnector(0)) {
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.lineTo(centerX, centerY - length - (connected[0] ? 4 : 0));
-                    ctx.stroke();
-                }
-                if (block.getConnector(1)) {
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.lineTo(centerX + length + (connected[1] ? 4 : 0), centerY);
-                    ctx.stroke();
-                }
-                if (block.getConnector(2)) {
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.lineTo(centerX, centerY + length + (connected[2] ? 4 : 0));
-                    ctx.stroke();
-                }
-                if (block.getConnector(3)) {
-                    ctx.beginPath();
-                    ctx.moveTo(centerX, centerY);
-                    ctx.lineTo(centerX - length - (connected[3] ? 4 : 0), centerY);
-                    ctx.stroke();
-                }
+                const cx = x + size/2, cy = y + size/2, len = s/2 - 2;
+                if (block.getConnector(0)) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - len - (connected[0] ? 4 : 0)); ctx.stroke(); }
+                if (block.getConnector(1)) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + len + (connected[1] ? 4 : 0), cy); ctx.stroke(); }
+                if (block.getConnector(2)) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + len + (connected[2] ? 4 : 0)); ctx.stroke(); }
+                if (block.getConnector(3)) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - len - (connected[3] ? 4 : 0), cy); ctx.stroke(); }
                 
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = glowColor || (isHighlighted ? '#fff' : block.color);
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, glowColor ? 7 : (isHighlighted ? 6 : 5), 0, Math.PI * 2);
-                ctx.fill();
-                
+                ctx.beginPath(); ctx.arc(cx, cy, glowColor ? 7 : (isHighlighted ? 6 : 5), 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
             
             hasFreeConnectors(x, y) {
                 const block = this.grid[y][x];
                 if (!block) return false;
-                const directions = [
-                    {dx: 0, dy: -1, dir: 0, opposite: 2},
-                    {dx: 1, dy: 0, dir: 1, opposite: 3},
-                    {dx: 0, dy: 1, dir: 2, opposite: 0},
-                    {dx: -1, dy: 0, dir: 3, opposite: 1}
-                ];
-                for (const {dx, dy, dir, opposite} of directions) {
+                const dirs = [[0, -1, 0, 2], [1, 0, 1, 3], [0, 1, 2, 0], [-1, 0, 3, 1]];
+                for (const [dx, dy, dir, opp] of dirs) {
                     if (block.getConnector(dir)) {
                         const nx = x + dx, ny = y + dy;
                         if (nx < 0 || nx >= this.gridSize || ny < 0 || ny >= this.gridSize) return true;
-                        const neighbor = this.grid[ny][nx];
-                        if (!neighbor || !neighbor.getConnector(opposite)) return true;
+                        const nb = this.grid[ny][nx];
+                        if (!nb || !nb.getConnector(opp)) return true;
                     }
                 }
                 return false;
@@ -2671,116 +2289,43 @@
             
             draw() {
                 this.ctx.fillStyle = 'rgba(10, 10, 20, 0.3)';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, 300, 300);
                 
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
                 this.ctx.lineWidth = 1;
                 for (let i = 0; i <= this.gridSize; i++) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(i * this.cellSize, 0);
-                    this.ctx.lineTo(i * this.cellSize, this.canvas.height);
-                    this.ctx.stroke();
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(0, i * this.cellSize);
-                    this.ctx.lineTo(this.canvas.width, i * this.cellSize);
-                    this.ctx.stroke();
-                }
-                
-                if (this.longestChain && this.longestChainLength >= 3) {
-                    this.chainPulsePhase = (this.chainPulsePhase + 0.05) % (Math.PI * 2);
-                    const pulseIntensity = 0.5 + 0.5 * Math.sin(this.chainPulsePhase);
-                    
-                    for (const cellKey of this.longestChain) {
-                        const [cx, cy] = cellKey.split(',').map(Number);
-                        const block = this.grid[cy][cx];
-                        if (!block) continue;
-                        
-                        const directions = [
-                            {dx: 0, dy: -1, dir: 0, opposite: 2},
-                            {dx: 1, dy: 0, dir: 1, opposite: 3},
-                            {dx: 0, dy: 1, dir: 2, opposite: 0},
-                            {dx: -1, dy: 0, dir: 3, opposite: 1}
-                        ];
-                        
-                        for (const {dx, dy, dir, opposite} of directions) {
-                            if (block.getConnector(dir)) {
-                                const nx = cx + dx, ny = cy + dy;
-                                const neighborKey = `${nx},${ny}`;
-                                if (this.longestChain.has(neighborKey)) {
-                                    const neighbor = this.grid[ny][nx];
-                                    if (neighbor && neighbor.getConnector(opposite)) {
-                                        const startX = cx * this.cellSize + this.cellSize / 2;
-                                        const startY = cy * this.cellSize + this.cellSize / 2;
-                                        const endX = nx * this.cellSize + this.cellSize / 2;
-                                        const endY = ny * this.cellSize + this.cellSize / 2;
-                                        
-                                        this.ctx.beginPath();
-                                        this.ctx.moveTo(startX, startY);
-                                        this.ctx.lineTo(endX, endY);
-                                        
-                                        const gradient = this.ctx.createLinearGradient(startX, startY, endX, endY);
-                                        const color1 = `rgba(79, 195, 247, ${0.3 + pulseIntensity * 0.5})`;
-                                        const color2 = `rgba(105, 240, 174, ${0.3 + pulseIntensity * 0.5})`;
-                                        gradient.addColorStop(0, color1);
-                                        gradient.addColorStop(1, color2);
-                                        
-                                        this.ctx.strokeStyle = gradient;
-                                        this.ctx.lineWidth = 3 + pulseIntensity * 3;
-                                        this.ctx.lineCap = 'round';
-                                        this.ctx.shadowColor = '#4fc3f7';
-                                        this.ctx.shadowBlur = 10 + pulseIntensity * 10;
-                                        this.ctx.stroke();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    this.ctx.shadowBlur = 0;
+                    this.ctx.beginPath(); this.ctx.moveTo(i * 50, 0); this.ctx.lineTo(i * 50, 300); this.ctx.stroke();
+                    this.ctx.beginPath(); this.ctx.moveTo(0, i * 50); this.ctx.lineTo(300, i * 50); this.ctx.stroke();
                 }
                 
                 if (this.hoverCell.x >= 0) {
-                    const hx = this.hoverCell.x * this.cellSize;
-                    const hy = this.hoverCell.y * this.cellSize;
-                    
-                    if (this.hammerMode) {
-                        if (this.grid[this.hoverCell.y][this.hoverCell.x]) {
-                            this.ctx.fillStyle = 'rgba(255, 213, 79, 0.3)';
-                            this.ctx.fillRect(hx, hy, this.cellSize, this.cellSize);
-                            this.ctx.strokeStyle = '#ffd54f';
-                            this.ctx.lineWidth = 2;
-                            this.ctx.strokeRect(hx, hy, this.cellSize, this.cellSize);
-                        }
+                    const hx = this.hoverCell.x * 50, hy = this.hoverCell.y * 50;
+                    if (this.hammerMode && this.grid[this.hoverCell.y][this.hoverCell.x]) {
+                        this.ctx.fillStyle = 'rgba(255, 213, 79, 0.3)';
+                        this.ctx.fillRect(hx, hy, 50, 50);
+                        this.ctx.strokeStyle = '#ffd54f';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.strokeRect(hx, hy, 50, 50);
                     } else if (this.selectedSlot !== null && !this.grid[this.hoverCell.y][this.hoverCell.x]) {
                         this.ctx.fillStyle = 'rgba(79, 195, 247, 0.2)';
-                        this.ctx.fillRect(hx, hy, this.cellSize, this.cellSize);
-                        const ghostBlock = this.previewBlocks[this.selectedSlot];
-                        if (ghostBlock) {
-                            this.ctx.globalAlpha = 0.5;
-                            this.drawBlock(this.ctx, ghostBlock, hx, hy, this.cellSize, false, true);
-                            this.ctx.globalAlpha = 1;
-                        }
+                        this.ctx.fillRect(hx, hy, 50, 50);
+                        const ghost = this.previewBlocks[this.selectedSlot];
+                        if (ghost) { this.ctx.globalAlpha = 0.5; this.drawBlock(this.ctx, ghost, hx, hy, 50, false, true); this.ctx.globalAlpha = 1; }
                     } else if (this.grid[this.hoverCell.y][this.hoverCell.x]) {
                         this.ctx.fillStyle = 'rgba(255, 107, 157, 0.2)';
-                        this.ctx.fillRect(hx, hy, this.cellSize, this.cellSize);
+                        this.ctx.fillRect(hx, hy, 50, 50);
                     }
                 }
                 
-                for (let y = 0; y < this.gridSize; y++) {
-                    for (let x = 0; x < this.gridSize; x++) {
-                        if (this.grid[y][x]) {
-                            const isHighlighted = this.lastLoopCells.has(`${x},${y}`);
-                            const glowColor = this.getGlowColor(x, y);
-                            this.drawBlock(this.ctx, this.grid[y][x], x * this.cellSize, y * this.cellSize, this.cellSize, isHighlighted, false, glowColor);
-                        }
-                    }
-                }
+                for (let y = 0; y < this.gridSize; y++)
+                    for (let x = 0; x < this.gridSize; x++)
+                        if (this.grid[y][x])
+                            this.drawBlock(this.ctx, this.grid[y][x], x * 50, y * 50, 50, this.lastLoopCells.has(`${x},${y}`), false, this.getGlowColor(x, y));
                 
-                const particleDelta = this.slowMotionActive ? this.timeScale : 1;
+                const delta = this.slowMotionActive ? this.timeScale : 1;
                 this.particles = this.particles.filter(p => {
-                    p.x += p.vx * particleDelta;
-                    p.y += p.vy * particleDelta;
-                    p.vy += 0.15 * particleDelta;
-                    p.life -= (p.decay || 0.02) * particleDelta;
+                    p.x += p.vx * delta; p.y += p.vy * delta; p.vy += 0.15 * delta;
+                    p.life -= (p.decay || 0.02) * delta;
                     if (p.life > 0) {
                         this.ctx.globalAlpha = p.life;
                         this.ctx.fillStyle = p.color;
@@ -2797,23 +2342,11 @@
                 });
             }
             
-            animate(timestamp) {
-                if (this.slowMotionActive) {
-                    if (!this.lastTimestamp) {
-                        this.lastTimestamp = timestamp;
-                    }
-                    const elapsed = timestamp - this.lastTimestamp;
-                    if (elapsed < 16 / this.timeScale) {
-                        requestAnimationFrame((ts) => this.animate(ts));
-                        return;
-                    }
-                    this.lastTimestamp = timestamp;
-                }
-                
+            animate() {
                 this.updateScreenShake();
                 this.updateBlockScaleAnimations();
                 this.draw();
-                requestAnimationFrame((ts) => this.animate(ts));
+                requestAnimationFrame(() => this.animate());
             }
             
             updateScore() {
@@ -2822,186 +2355,144 @@
                     this.isNewRecord = true;
                     localStorage.setItem('loopixHigh', this.highScore);
                 }
-                
                 document.getElementById('score').textContent = this.score;
                 document.getElementById('highScore').textContent = this.highScore;
                 document.getElementById('maxCombo').textContent = this.maxCombo;
             }
             
-            gameOver() {
-                this.isGameOver = true;
-                document.getElementById('finalScore').textContent = `Счёт: ${this.score}`;
-                document.getElementById('finalLoops').textContent = `Петель: ${this.loops}`;
-                
-                // Удаляем сохранение при game over
-                localStorage.removeItem('loopixSave');
-                
-                if (this.isNewRecord) {
-                    this.generateShareImage();
-                    document.getElementById('shareModal').classList.add('show');
-                    this.isNewRecord = false;
-                } else {
-                    document.getElementById('gameOverScreen').classList.add('show');
-                }
-            }
-            
             generateShareImage() {
                 const canvas = document.getElementById('shareCanvas');
                 const ctx = canvas.getContext('2d');
-                const w = 1080;
-                const h = 1080;
+                const w = 1080, h = 1080;
                 
-                const gradient = ctx.createLinearGradient(0, 0, 0, h);
-                gradient.addColorStop(0, '#1a1a3e');
-                gradient.addColorStop(0.5, '#2d2d5a');
-                gradient.addColorStop(1, '#1a1a3e');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, w, h);
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#1a1a3e'); grad.addColorStop(0.5, '#2d2d5a'); grad.addColorStop(1, '#1a1a3e');
+                ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
                 
-                ctx.fillStyle = 'rgba(79, 195, 247, 0.1)';
-                ctx.beginPath();
-                ctx.arc(w * 0.8, h * 0.2, 300, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = 'rgba(255, 213, 79, 0.08)';
-                ctx.beginPath();
-                ctx.arc(w * 0.2, h * 0.8, 250, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.font = 'bold 120px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.textAlign = 'center';
-                const titleGrad = ctx.createLinearGradient(w/2 - 200, 0, w/2 + 200, 0);
-                titleGrad.addColorStop(0, '#4fc3f7');
-                titleGrad.addColorStop(0.5, '#69f0ae');
-                titleGrad.addColorStop(1, '#ffd54f');
-                ctx.fillStyle = titleGrad;
-                ctx.shadowColor = '#4fc3f7';
-                ctx.shadowBlur = 30;
+                ctx.font = 'bold 120px -apple-system, sans-serif'; ctx.textAlign = 'center';
+                const tg = ctx.createLinearGradient(w/2-200, 0, w/2+200, 0);
+                tg.addColorStop(0, '#4fc3f7'); tg.addColorStop(0.5, '#69f0ae'); tg.addColorStop(1, '#ffd54f');
+                ctx.fillStyle = tg; ctx.shadowColor = '#4fc3f7'; ctx.shadowBlur = 30;
                 ctx.fillText('LOOPIX', w/2, 180);
                 
-                ctx.shadowBlur = 0;
-                ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = '#ffd54f';
-                ctx.shadowColor = '#ff8a65';
-                ctx.shadowBlur = 20;
-                ctx.fillText('🏆 НОВЫЙ РЕКОРД 🏆', w/2, 280);
+                ctx.shadowBlur = 0; ctx.font = 'bold 50px -apple-system, sans-serif';
+                ctx.fillStyle = '#ffd54f'; ctx.shadowColor = '#ff8a65'; ctx.shadowBlur = 20;
+                ctx.fillText(I18N.t('newRecord'), w/2, 280);
                 
-                ctx.shadowBlur = 0;
-                ctx.font = 'bold 90px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = '#4fc3f7';
-                ctx.shadowColor = '#4fc3f7';
-                ctx.shadowBlur = 25;
+                ctx.shadowBlur = 0; ctx.font = 'bold 90px -apple-system, sans-serif';
+                ctx.fillStyle = '#4fc3f7'; ctx.shadowColor = '#4fc3f7'; ctx.shadowBlur = 25;
                 ctx.fillText(this.score.toString(), w/2, 420);
                 
-                ctx.font = '40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.shadowBlur = 10;
-                ctx.fillText('очков', w/2, 490);
+                ctx.font = '40px -apple-system, sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.shadowBlur = 10;
+                ctx.fillText(I18N.t('points'), w/2, 490);
                 
-                ctx.shadowBlur = 0;
-                ctx.font = '35px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.fillText(`🌀 Петель: ${this.loops}`, w/2, 620);
+                ctx.font = '35px -apple-system, sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.shadowBlur = 0;
+                ctx.fillText(`🌀 ${I18N.t('finalLoops').replace(':', '')}: ${this.loops}`, w/2, 620);
+                ctx.fillStyle = '#ffd54f'; ctx.fillText(`⚡ ${I18N.t('maxCombo')}: x${this.maxCombo}`, w/2, 690);
                 
-                ctx.fillStyle = '#ffd54f';
-                ctx.fillText(`⚡ Макс комбо: x${this.maxCombo}`, w/2, 690);
+                ctx.font = 'bold 45px -apple-system, sans-serif';
+                ctx.fillStyle = '#ff8a65'; ctx.shadowColor = '#ff8a65'; ctx.shadowBlur = 20;
+                ctx.fillText(I18N.t('canYouBeat'), w/2, 820);
                 
-                ctx.font = 'bold 45px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = '#ff8a65';
-                ctx.shadowColor = '#ff8a65';
-                ctx.shadowBlur = 20;
-                ctx.fillText('А ТЫ ТАК СМОЖЕШЬ?', w/2, 820);
-                
-                ctx.font = '30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.shadowBlur = 0;
-                ctx.fillText('Loopix v0.7', w/2, 980);
+                ctx.font = '30px -apple-system, sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.shadowBlur = 0;
+                ctx.fillText('Loopix v0.8', w/2, 980);
             }
             
             downloadShareImage() {
                 const canvas = document.getElementById('shareCanvas');
+                
+                // Создаём ссылку для скачивания
                 const link = document.createElement('a');
                 link.download = 'loopix-record.png';
                 link.href = canvas.toDataURL('image/png');
+                
+                // Добавляем в DOM, кликаем и удаляем
+                document.body.appendChild(link);
                 link.click();
+                document.body.removeChild(link);
             }
             
             async shareImage() {
                 const canvas = document.getElementById('shareCanvas');
                 
-                if (navigator.share) {
+                // Проверяем поддержку Web Share API
+                if (navigator.share && navigator.canShare) {
                     try {
+                        // Конвертируем canvas в blob
                         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        
+                        // Создаём файл
                         const file = new File([blob], 'loopix-record.png', { type: 'image/png' });
                         
-                        await navigator.share({
-                            title: 'Loopix - Новый рекорд!',
-                            text: `Я набрал ${this.score} очков в Loopix! А ты так сможешь?`,
-                            files: [file]
-                        });
+                        // Проверяем, можно ли поделиться файлом
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: I18N.t('shareTitle'),
+                                text: I18N.t('shareText', { score: this.score }),
+                                files: [file]
+                            });
+                            return;
+                        }
                     } catch (e) {
-                        this.downloadShareImage();
+                        console.log('Share failed, falling back to download:', e);
                     }
-                } else {
-                    this.downloadShareImage();
                 }
+                
+                // Fallback - скачивание
+                this.downloadShareImage();
             }
             
             closeShareModal() {
                 document.getElementById('shareModal').classList.remove('show');
-                document.getElementById('gameOverScreen').classList.add('show');
+                document.getElementById('gameOverModal').classList.add('show');
             }
             
             newGame() {
+                // Очищаем все интервалы
+                if (this.adInterval) {
+                    clearInterval(this.adInterval);
+                    this.adInterval = null;
+                }
+                
                 this.isGameOver = false;
-                this.score = 0;
-                this.displayScore = 0;
-                this.loops = 0;
-                this.combo = 1;
+                this.score = 0; this.displayScore = 0; this.loops = 0; this.combo = 1;
                 this.difficultyLevel = 0;
-                this.previewBlocks = [null, null, null];
-                this.selectedSlot = null;
+                this.previewBlocks = [null, null, null]; this.selectedSlot = null;
                 this.hoverCell = { x: -1, y: -1 };
-                this.lastLoopCells.clear();
-                this.chainGlowColors.clear();
-                this.particles = [];
-                this.hammerMode = false;
-                this.hammerUsed = false;
-                this.hammerAvailable = true;
+                this.lastLoopCells.clear(); this.chainGlowColors.clear(); this.particles = [];
+                this.hammerMode = false; this.hammerUsed = false; this.hammerAvailable = true;
                 this.nextHammerAt = 2000;
-                this.isRescueMode = false;
-                this.shakeIntensity = 0;
-                this.blockScaleAnimations.clear();
-                this.slowMotionActive = false;
-                this.timeScale = 1;
-                this.dragActive = false;
-                this.dragSlot = -1;
-                this.dragStartSlot = -1;
-                this.dragRotated = false;
-                this.longestChain = null;
-                this.longestChainLength = 0;
-                this.chainPulsePhase = 0;
+                this.shakeIntensity = 0; this.blockScaleAnimations.clear();
+                this.slowMotionActive = false; this.timeScale = 1;
+                this.dragActive = false; this.dragRotated = false;
+                this.longestChain = null; this.longestChainLength = 0;
                 this.isNewRecord = false;
                 this.darkOverlay.classList.remove('active');
                 this.canvas.classList.remove('hammer-mode', 'hammer-target', 'slow-motion-active');
                 document.getElementById('hammerBtn').classList.remove('disabled');
                 document.getElementById('hammerIndicator').classList.remove('show');
-                document.getElementById('gameOverScreen').classList.remove('show');
+                document.getElementById('gameOverModal').classList.remove('show');
                 document.getElementById('shareModal').classList.remove('show');
                 document.getElementById('rescueModal').classList.remove('show');
+                document.getElementById('adModal').classList.remove('show');
                 this.gameContainer.style.transform = '';
-                
-                // Удаляем сохранение
                 localStorage.removeItem('loopixSave');
-                
                 this.setupGrid();
                 this.placeInitialBlocks();
                 this.generateNewSet();
                 this.updateScore();
+                this.updateUITexts();
             }
         }
         
-        const game = new Loopix();
+        let game;
+        document.addEventListener('DOMContentLoaded', () => {
+            game = new Loopix();
+            window.game = game;
+        });
     </script>
 </body>
 </html>
