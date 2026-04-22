@@ -44,12 +44,17 @@ jobs:
       working-directory: build-temp
       run: cordova platform add android
 
-    # 🔌 ПЛАГИНЫ (🔥 ВАЖНО — ДОБАВИЛИ YANDEX ADS)
+    # 🔌 УСТАНОВКА ПЛАГИНОВ (FIXED)
     - name: Add plugins
       working-directory: build-temp
       run: |
+        sudo apt-get update
+        sudo apt-get install -y git
+
         cordova plugin add cordova-plugin-x-socialsharing
-        cordova plugin add https://github.com/yandexmobile/yandex-ads-cordova-plugin
+
+        # 🔥 ВАЖНО: .git в конце!
+        cordova plugin add https://github.com/yandexmobile/yandex-ads-cordova-plugin.git --nofetch
 
     # 🔢 versionCode (для Google Play)
     - name: Set versionCode
@@ -95,7 +100,7 @@ jobs:
         APK_PATH=$(find . -name "*.apk" | head -n 1)
         echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
 
-    # 📤 загрузка
+    # 📤 загрузка APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
