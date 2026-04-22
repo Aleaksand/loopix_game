@@ -60,7 +60,7 @@
             position: relative;
             width: 100%;
             max-width: 400px;
-            padding: 0 20px 70px;
+            padding: 0 20px 80px;
             transition: transform 0.05s ease-out;
         }
         #gameWrapper {
@@ -913,6 +913,9 @@
         // 🔥 ГЛОБАЛЬНЫЕ ФЛАГИ ДЛЯ РЕКЛАМЫ
         window.adRunning = false;
         window.adStubInterval = null;
+        window.lastInterstitialTime = 0;
+        window.bannerShown = false;
+        window.gamesPlayed = 0;
         
         // Определение языка системы
         function detectSystemLanguage() {
@@ -1807,6 +1810,17 @@
                 } else {
                     document.getElementById('gameOverModal').classList.add('show');
                 }
+                
+                // 🔥 ПОКАЗЫВАЕМ INTERSTITIAL С ЗАДЕРЖКОЙ И ЧЕРЕЗ ОДНУ ИГРУ
+                window.gamesPlayed++;
+                
+                if (window.gamesPlayed % 2 === 0) {
+                    setTimeout(() => {
+                        showInterstitialAd();
+                    }, 1000);
+                } else {
+                    console.log("[YANDEX] Skipping interstitial (every other game)");
+                }
             }
             
             useRescueHammer() {
@@ -2521,35 +2535,23 @@
             }
         }
         
-        // ========== YANDEX ADS STUB (РЕЛИЗ-ВЕРСИЯ) ==========
-        function showRewardAd(callback) {
-            if (window.adRunning) {
-                console.warn("[AD STUB] Ad already running");
-                return;
-            }
-            
-            if (window.adStubInterval) {
-                clearInterval(window.adStubInterval);
-                window.adStubInterval = null;
-            }
-            
-            const adModal = document.getElementById('adModal');
-            
-            if (!adModal) {
-                console.warn("[AD STUB] adModal not found");
-                return;
-            }
-            
-            const timerEl = document.getElementById('adTimer');
-            
-            if (!timerEl) {
-                console.warn("[AD STUB] Timer element not found");
-                return;
-            }
-            
+        // ========== YANDEX ADS (ФИНАЛЬНАЯ ВЕРСИЯ) ==========
+        
+        // 🔥 FALLBACK STUB (для тестов в браузере)
+        function showRewardAdStub(callback) {
+            if (window.adRunning) return;
             window.adRunning = true;
             
-            console.log("[AD STUB] Ad started");
+            const adModal = document.getElementById('adModal');
+            const timerEl = document.getElementById('adTimer');
+            
+            if (!adModal || !timerEl) {
+                window.adRunning = false;
+                if (callback) callback();
+                return;
+            }
+            
+            console.log("[YANDEX STUB] Showing stub ad");
             
             adModal.classList.add('show');
             I18N.updateUI();
@@ -2563,11 +2565,7 @@
             if (oldCancelBtn) {
                 cancelBtn = oldCancelBtn.cloneNode(true);
                 oldCancelBtn.replaceWith(cancelBtn);
-            }
-            
-            if (cancelBtn) {
                 cancelBtn.style.opacity = "0.5";
-                cancelBtn.style.transition = "opacity 0.2s";
             }
             
             let finished = false;
@@ -2587,23 +2585,10 @@
                     
                     if (cancelBtn) cancelBtn.style.opacity = "";
                     
-                    console.log("[AD STUB] Ad finished");
-                    console.log("[AD STUB] Reward callback executed");
-                    
+                    console.log("[YANDEX STUB] Reward callback executed");
                     if (callback) callback();
                 }
             }, 1000);
-            
-            setTimeout(() => {
-                if (window.adRunning && window.adStubInterval) {
-                    console.warn("[AD STUB] Force cleanup after 5s");
-                    clearInterval(window.adStubInterval);
-                    window.adStubInterval = null;
-                    window.adRunning = false;
-                    adModal.classList.remove('show');
-                    if (cancelBtn) cancelBtn.style.opacity = "";
-                }
-            }, 5000);
             
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', function adCancelHandler() {
@@ -2617,20 +2602,103 @@
                     
                     cancelBtn.style.opacity = "";
                     
-                    console.log("[AD STUB] Ad cancelled");
-                    
+                    console.log("[YANDEX STUB] Ad cancelled");
                     cancelBtn.removeEventListener('click', adCancelHandler);
                 });
             }
         }
         
+        // 🎬 REWARDED VIDEO (молоток / второй шанс)
+        function showRewardAd(callback) {
+            if (window.adRunning) {
+                console.warn("[YANDEX] Ad already running");
+                return;
+            }
+            
+            window.adRunning = true;
+
+            if (!window.plugins || !window.plugins.yandexAds) {
+                console.warn("[YANDEX] Plugin not found, using stub");
+                showRewardAdStub(callback);
+                return;
+            }
+
+            console.log("[YANDEX] Show rewarded video");
+
+            window.plugins.yandexAds.showRewardedVideo(
+                {
+                    adUnitId: "R-M-19134091-2"
+                },
+                (result) => {
+                    console.log("[YANDEX] Reward result:", result);
+                    window.adRunning = false;
+
+                    if (result && result.rewarded === true) {
+                        console.log("[YANDEX] Reward given");
+                        if (callback) callback();
+                    } else {
+                        console.log("[YANDEX] No reward (skipped)");
+                    }
+                },
+                (error) => {
+                    console.error("[YANDEX] Reward error:", error);
+                    window.adRunning = false;
+                }
+            );
+        }
+        
+        // 📺 INTERSTITIAL (полноэкранная реклама при game over)
+        function showInterstitialAd() {
+            const now = Date.now();
+
+            if (now - window.lastInterstitialTime < 60000) {
+                console.log("[YANDEX] Interstitial cooldown, skipping");
+                return;
+            }
+
+            window.lastInterstitialTime = now;
+
+            console.log("[YANDEX] Show interstitial");
+
+            if (!window.plugins || !window.plugins.yandexAds) {
+                console.warn("[YANDEX] Plugin not found, cannot show interstitial");
+                return;
+            }
+
+            window.plugins.yandexAds.showInterstitialAd({
+                adUnitId: "R-M-19134091-3"
+            });
+        }
+        
         function onDeviceReady() {
             console.log("[CORDOVA] Device Ready");
-            
+
             window.adRunning = false;
             if (window.adStubInterval) {
                 clearInterval(window.adStubInterval);
                 window.adStubInterval = null;
+            }
+
+            if (window.plugins && window.plugins.yandexAds) {
+                console.log("[YANDEX] SDK ready");
+
+                if (!window.bannerShown) {
+                    window.bannerShown = true;
+                    
+                    setTimeout(() => {
+                        if (window.plugins && window.plugins.yandexAds) {
+                            console.log("[YANDEX] Showing banner");
+                            window.plugins.yandexAds.showBanner({
+                                adUnitId: "R-M-19134091-1",
+                                position: "bottom"
+                            });
+                        }
+                    }, 500);
+                } else {
+                    console.log("[YANDEX] Banner already shown, skipping");
+                }
+            } else {
+                console.warn("[YANDEX] Plugin not found, using stub");
             }
         }
         
