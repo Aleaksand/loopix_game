@@ -44,11 +44,12 @@ jobs:
       working-directory: build-temp
       run: cordova platform add android
 
-    # 🔌 ПЛАГИН ШАРИНГА (ВАЖНО!)
+    # 🔌 ПЛАГИНЫ (🔥 ВАЖНО — ДОБАВИЛИ YANDEX ADS)
     - name: Add plugins
       working-directory: build-temp
       run: |
         cordova plugin add cordova-plugin-x-socialsharing
+        cordova plugin add https://github.com/yandexmobile/yandex-ads-cordova-plugin
 
     # 🔢 versionCode (для Google Play)
     - name: Set versionCode
